@@ -2,7 +2,7 @@ package libcore
 
 import (
 	"crypto/x509"
-	"io/ioutil"
+	"os"
 	_ "unsafe"
 
 	"github.com/sirupsen/logrus"
@@ -14,7 +14,7 @@ var systemRoots *x509.CertPool
 func updateRootCACerts() {
 	x509.SystemCertPool()
 	roots := x509.NewCertPool()
-	pemFile, err := ioutil.ReadFile(internalAssetsPath + mozillaIncludedPem)
+	pemFile, err := os.ReadFile(internalAssetsPath + mozillaIncludedPem)
 	if err != nil {
 		logrus.Warn("failed to load root ca certificates from internal assets dir: ", err)
 		return

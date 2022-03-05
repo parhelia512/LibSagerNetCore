@@ -3,9 +3,11 @@ package nat
 import (
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
+	"gvisor.dev/gvisor/pkg/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip"
-	"gvisor.dev/gvisor/pkg/tcpip/buffer"
+	"gvisor.dev/gvisor/pkg/tcpip/checksum"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
+	"gvisor.dev/gvisor/pkg/tcpip/stack"
 	"libcore/comm"
 )
 
@@ -16,12 +18,12 @@ func (t *SystemTun) processIPv4UDP(cache *buf.Buffer, ipHdr header.IPv4, hdr hea
 	destinationPort := hdr.DestinationPort()
 
 	source := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(sourceAddress)),
+		Address: v2rayNet.IPAddress(sourceAddress.AsSlice()),
 		Port:    v2rayNet.Port(sourcePort),
 		Network: v2rayNet.Network_UDP,
 	}
 	destination := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(destinationAddress)),
+		Address: v2rayNet.IPAddress(destinationAddress.AsSlice()),
 		Port:    v2rayNet.Port(destinationPort),
 		Network: v2rayNet.Network_UDP,
 	}
@@ -48,7 +50,7 @@ func (t *SystemTun) processIPv4UDP(cache *buf.Buffer, ipHdr header.IPv4, hdr hea
 		var newSourcePort uint16
 
 		if addr != nil {
-			newSourceAddress = tcpip.Address(addr.IP)
+			newSourceAddress = tcpip.AddrFromSlice(addr.IP)
 			newSourcePort = uint16(addr.Port)
 		} else {
 			newSourceAddress = destinationAddress
@@ -65,13 +67,15 @@ func (t *SystemTun) processIPv4UDP(cache *buf.Buffer, ipHdr header.IPv4, hdr hea
 		udpHdr.SetSourcePort(newSourcePort)
 		udpHdr.SetLength(uint16(header.UDPMinimumSize + len(bytes)))
 		udpHdr.SetChecksum(0)
-		udpHdr.SetChecksum(^udpHdr.CalculateChecksum(header.Checksum(bytes, header.PseudoHeaderChecksum(header.UDPProtocolNumber, newSourceAddress, sourceAddress, uint16(header.UDPMinimumSize+len(bytes))))))
+		udpHdr.SetChecksum(^udpHdr.CalculateChecksum(checksum.Checksum(bytes, header.PseudoHeaderChecksum(header.UDPProtocolNumber, newSourceAddress, sourceAddress, uint16(header.UDPMinimumSize+len(bytes))))))
 
-		replyVV := buffer.VectorisedView{}
-		replyVV.AppendView(newHeader)
-		replyVV.AppendView(bytes)
+		payload := buffer.MakeWithData(newHeader)
+		payload.Append(buffer.NewViewWithData(bytes))
 
-		if err := t.writeRawPacket(replyVV); err != nil {
+		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
+			Payload: payload,
+		})
+		if err := t.writeRawPacket(pkt); err != nil {
 			return 0, newError(err.String())
 		}
 
@@ -86,12 +90,12 @@ func (t *SystemTun) processIPv6UDP(cache *buf.Buffer, ipHdr header.IPv6, hdr hea
 	destinationPort := hdr.DestinationPort()
 
 	source := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(sourceAddress)),
+		Address: v2rayNet.IPAddress(sourceAddress.AsSlice()),
 		Port:    v2rayNet.Port(sourcePort),
 		Network: v2rayNet.Network_UDP,
 	}
 	destination := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(destinationAddress)),
+		Address: v2rayNet.IPAddress(destinationAddress.AsSlice()),
 		Port:    v2rayNet.Port(destinationPort),
 		Network: v2rayNet.Network_UDP,
 	}
@@ -118,7 +122,7 @@ func (t *SystemTun) processIPv6UDP(cache *buf.Buffer, ipHdr header.IPv6, hdr hea
 		var newSourcePort uint16
 
 		if addr != nil {
-			newSourceAddress = tcpip.Address(addr.IP)
+			newSourceAddress = tcpip.AddrFromSlice(addr.IP)
 			newSourcePort = uint16(addr.Port)
 		} else {
 			newSourceAddress = destinationAddress
@@ -133,13 +137,15 @@ func (t *SystemTun) processIPv6UDP(cache *buf.Buffer, ipHdr header.IPv6, hdr hea
 		udpHdr.SetSourcePort(newSourcePort)
 		udpHdr.SetLength(uint16(header.UDPMinimumSize + len(bytes)))
 		udpHdr.SetChecksum(0)
-		udpHdr.SetChecksum(^udpHdr.CalculateChecksum(header.Checksum(bytes, header.PseudoHeaderChecksum(header.UDPProtocolNumber, newSourceAddress, sourceAddress, uint16(header.UDPMinimumSize+len(bytes))))))
+		udpHdr.SetChecksum(^udpHdr.CalculateChecksum(checksum.Checksum(bytes, header.PseudoHeaderChecksum(header.UDPProtocolNumber, newSourceAddress, sourceAddress, uint16(header.UDPMinimumSize+len(bytes))))))
 
-		replyVV := buffer.VectorisedView{}
-		replyVV.AppendView(headerCache.Bytes())
-		replyVV.AppendView(bytes)
+		payload := buffer.MakeWithData(newHeader)
+		payload.Append(buffer.NewViewWithData(bytes))
 
-		if err := t.writeRawPacket(replyVV); err != nil {
+		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
+			Payload: payload,
+		})
+		if err := t.writeRawPacket(pkt); err != nil {
 			return 0, newError(err.String())
 		}
 

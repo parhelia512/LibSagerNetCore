@@ -14,8 +14,8 @@ import (
 	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/v2fly/v2ray-core/v5/common/net"
+	"github.com/v2fly/v2ray-core/v5/common/net/cnc"
 	"github.com/v2fly/v2ray-core/v5/common/protocol/udp"
-	commonSerial "github.com/v2fly/v2ray-core/v5/common/serial"
 	"github.com/v2fly/v2ray-core/v5/common/signal"
 	"github.com/v2fly/v2ray-core/v5/features"
 	"github.com/v2fly/v2ray-core/v5/features/dns"
@@ -24,11 +24,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/features/routing"
 	"github.com/v2fly/v2ray-core/v5/features/stats"
 	"github.com/v2fly/v2ray-core/v5/infra/conf/serial"
-	_ "github.com/v2fly/v2ray-core/v5/main/distro/minimal"
-	"github.com/v2fly/v2ray-core/v5/proxy/vmess"
-	vmessOutbound "github.com/v2fly/v2ray-core/v5/proxy/vmess/outbound"
 	"github.com/v2fly/v2ray-core/v5/transport"
-	"github.com/v2fly/v2ray-core/v5/transport/pipe"
 )
 
 func GetV2RayVersion() string {
@@ -43,7 +39,7 @@ type V2RayInstance struct {
 	outboundManager outbound.Manager
 	statsManager    stats.Manager
 	observatory     features.TaggedFeatures
-	dnsClient       dns.NewClient
+	dnsClient       dns.Client
 }
 
 func NewV2rayInstance() *V2RayInstance {
@@ -69,45 +65,6 @@ func (instance *V2RayInstance) LoadConfig(content string) error {
 	if err != nil {
 		return err
 	}
-	if config.Outbound != nil {
-		for _, outbound := range config.Outbound {
-			if outbound.ProxySettings == nil {
-				continue
-			}
-			proxyConfig, err := commonSerial.GetInstanceOf(outbound.ProxySettings)
-			if err != nil {
-				continue
-			}
-			proxy, ok := proxyConfig.(*vmessOutbound.Config)
-			if !ok {
-				continue
-			}
-			var reset bool
-			for _, endpoint := range proxy.Receiver {
-				for _, user := range endpoint.User {
-					if user.Account == nil {
-						continue
-					}
-					accountConfig, err := commonSerial.GetInstanceOf(user.Account)
-					if err != nil {
-						continue
-					}
-					account, ok := accountConfig.(*vmess.Account)
-					if !ok {
-						continue
-					}
-					if account.AlterId > 0 {
-						account.AlterId = 0
-						user.Account = commonSerial.ToTypedMessage(account)
-						reset = true
-					}
-				}
-			}
-			if reset {
-				outbound.ProxySettings = commonSerial.ToTypedMessage(proxy)
-			}
-		}
-	}
 
 	c, err := core.New(config)
 	if err != nil {
@@ -118,7 +75,7 @@ func (instance *V2RayInstance) LoadConfig(content string) error {
 	instance.router = c.GetFeature(routing.RouterType()).(routing.Router)
 	instance.outboundManager = c.GetFeature(outbound.ManagerType()).(outbound.Manager)
 	instance.dispatcher = c.GetFeature(routing.DispatcherType()).(routing.Dispatcher)
-	instance.dnsClient = c.GetFeature(dns.ClientType()).(dns.NewClient)
+	instance.dnsClient = c.GetFeature(dns.ClientType()).(dns.Client)
 
 	o := c.GetFeature(extension.ObservatoryType())
 	if o != nil {
@@ -127,16 +84,13 @@ func (instance *V2RayInstance) LoadConfig(content string) error {
 	return nil
 }
 
-func (instance *V2RayInstance) Start(errorHandler ErrorHandler) error {
+func (instance *V2RayInstance) Start() error {
 	if instance.started {
 		return errors.New("already started")
 	}
 	if instance.core == nil {
 		return errors.New("not initialized")
 	}
-	instance.core.SetErrorHandler(func(err error) {
-		errorHandler.HandleError(err.Error())
-	})
 	err := instance.core.Start()
 	if err != nil {
 		return err
@@ -167,23 +121,6 @@ func (instance *V2RayInstance) Close() error {
 	return nil
 }
 
-func getLink(ctx context.Context) (*transport.Link, *transport.Link) {
-	opt := pipe.OptionsFromContext(ctx)
-	uplinkReader, uplinkWriter := pipe.New(opt...)
-	downlinkReader, downlinkWriter := pipe.New(opt...)
-
-	inboundLink := &transport.Link{
-		Reader: downlinkReader,
-		Writer: uplinkWriter,
-	}
-
-	outboundLink := &transport.Link{
-		Reader: uplinkReader,
-		Writer: downlinkWriter,
-	}
-	return inboundLink, outboundLink
-}
-
 func (instance *V2RayInstance) dialContext(ctx context.Context, destination net.Destination) (net.Conn, error) {
 	if !instance.started {
 		return nil, os.ErrInvalid
@@ -193,24 +130,13 @@ func (instance *V2RayInstance) dialContext(ctx context.Context, destination net.
 	if err != nil {
 		return nil, err
 	}
-	var readerOpt buf.ConnectionOption
+	var readerOpt cnc.ConnectionOption
 	if destination.Network == net.Network_TCP {
-		readerOpt = buf.ConnectionOutputMulti(r.Reader)
+		readerOpt = cnc.ConnectionOutputMulti(r.Reader)
 	} else {
-		readerOpt = buf.ConnectionOutputMultiUDP(r.Reader)
+		readerOpt = cnc.ConnectionOutputMultiUDP(r.Reader)
 	}
-	return buf.NewConnection(buf.ConnectionInputMulti(r.Writer), readerOpt), nil
-}
-
-func (instance *V2RayInstance) dispatchContext(ctx context.Context, destination net.Destination, conn net.Conn) error {
-	if !instance.started {
-		return os.ErrInvalid
-	}
-	ctx = core.WithContext(ctx, instance.core)
-	return instance.dispatcher.DispatchLink(ctx, destination, &transport.Link{
-		Reader: buf.NewReader(conn),
-		Writer: buf.NewWriter(conn),
-	})
+	return cnc.NewConnection(cnc.ConnectionInputMulti(r.Writer), readerOpt), nil
 }
 
 func (instance *V2RayInstance) dialUDP(ctx context.Context, destination net.Destination, timeout time.Duration) (packetConn, error) {
@@ -237,24 +163,6 @@ func (instance *V2RayInstance) dialUDP(ctx context.Context, destination net.Dest
 	return c, nil
 }
 
-func (instance *V2RayInstance) handleUDP(ctx context.Context, handler outbound.Handler, destination net.Destination, timeout time.Duration) packetConn {
-	ctx, cancel := context.WithCancel(ctx)
-	inboundLink, outboundLink := getLink(ctx)
-	go handler.Dispatch(ctx, outboundLink)
-	c := &dispatcherConn{
-		dest:   destination,
-		link:   inboundLink,
-		ctx:    ctx,
-		cancel: cancel,
-		cache:  make(chan *udp.Packet, 16),
-	}
-	c.timer = signal.CancelAfterInactivity(ctx, func() {
-		c.Close()
-	}, timeout)
-	go c.handleInput()
-	return c
-}
-
 var _ packetConn = (*dispatcherConn)(nil)
 
 type dispatcherConn struct {
@@ -267,10 +175,6 @@ type dispatcherConn struct {
 	cancel context.CancelFunc
 	closed bool
 	cache  chan *udp.Packet
-}
-
-func (c *dispatcherConn) IsPipe() bool {
-	return true
 }
 
 func (c *dispatcherConn) handleInput() {
@@ -371,10 +275,6 @@ func (c *dispatcherConn) writeTo(buffer *buf.Buffer, addr net.Addr) (err error) 
 		c.timer.Update()
 	}
 	return
-}
-
-func (c *dispatcherConn) RemoteAddr() net.Addr {
-	return nil
 }
 
 func (c *dispatcherConn) LocalAddr() net.Addr {

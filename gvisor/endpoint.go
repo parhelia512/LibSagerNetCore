@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"golang.org/x/sys/unix"
+	"gvisor.dev/gvisor/pkg/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
@@ -37,12 +38,12 @@ func newRwEndpoint(dev int32, mtu int32) (*rwEndpoint, error) {
 	return e, nil
 }
 
-func (e *rwEndpoint) InjectInbound(networkProtocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
+func (e *rwEndpoint) InjectInbound(networkProtocol tcpip.NetworkProtocolNumber, pkt stack.PacketBufferPtr) {
 	go e.dispatcher.DeliverNetworkPacket(networkProtocol, pkt)
 }
 
-func (e *rwEndpoint) InjectOutbound(dest tcpip.Address, packet []byte) tcpip.Error {
-	return rawfile.NonBlockingWrite(e.fd, packet)
+func (e *rwEndpoint) InjectOutbound(dest tcpip.Address, packet *buffer.View) tcpip.Error {
+	return rawfile.NonBlockingWrite(e.fd, packet.AsSlice())
 }
 
 // Attach launches the goroutine that reads packets from io.ReadWriter and
@@ -88,11 +89,8 @@ func (e *rwEndpoint) WritePackets(pkts stack.PacketBufferList) (int, tcpip.Error
 	// byte segment.
 	const batchSz = 47
 	batch := make([]unix.Iovec, 0, batchSz)
-	for pkt := pkts.Front(); pkt != nil; pkt = pkt.Next() {
-		views := pkt.Views()
-		for _, v := range views {
-			batch = rawfile.AppendIovecFromBytes(batch, v, rawfile.MaxIovs)
-		}
+	for _, pkt := range pkts.AsSlice() {
+		batch = rawfile.AppendIovecFromBytes(batch, pkt.ToView().AsSlice(), rawfile.MaxIovs)
 	}
 	err := rawfile.NonBlockingWriteIovec(e.fd, batch)
 	if err != nil {
@@ -127,7 +125,13 @@ func (*rwEndpoint) ARPHardwareType() header.ARPHardwareType {
 	return header.ARPHardwareNone
 }
 
-func (e *rwEndpoint) AddHeader(*stack.PacketBuffer) {
+// AddHeader implements stack.LinkEndpoint.AddHeader.
+func (e *rwEndpoint) AddHeader(stack.PacketBufferPtr) {
+}
+
+// ParseHeader implements stack.LinkEndpoint.ParseHeader.
+func (*rwEndpoint) ParseHeader(stack.PacketBufferPtr) bool {
+	return true
 }
 
 // Wait implements stack.LinkEndpoint.Wait.

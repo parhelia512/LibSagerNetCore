@@ -2,13 +2,13 @@ package libcore
 
 import (
 	"bytes"
-	"context"
 	"flag"
 	"strconv"
 
 	"github.com/Dreamacro/clash/transport/ssr/obfs"
 	"github.com/Dreamacro/clash/transport/ssr/protocol"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
+	"github.com/v2fly/v2ray-core/v5/common/net/cnc"
 	"github.com/v2fly/v2ray-core/v5/proxy/shadowsocks"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
 )
@@ -37,7 +37,7 @@ type shadowsocksrPlugin struct {
 	p protocol.Protocol
 }
 
-func (p *shadowsocksrPlugin) Init(_ context.Context, _ string, _ string, remoteHost string, remotePort string, _ string, pluginArgs []string, account *shadowsocks.MemoryAccount) error {
+func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remotePort string, _ string, pluginArgs []string, account *shadowsocks.MemoryAccount) error {
 	fs := flag.NewFlagSet("shadowsocksr", flag.ContinueOnError)
 	fs.StringVar(&p.obfs, "obfs", "origin", "")
 	fs.StringVar(&p.obfsParam, "obfs-param", "", "")
@@ -84,7 +84,7 @@ func (p *shadowsocksrPlugin) StreamConn(conn internet.Connection) internet.Conne
 }
 
 func (p *shadowsocksrPlugin) ProtocolConn(conn *shadowsocks.ProtocolConn, iv []byte) {
-	upstream := buf.NewConnection(buf.ConnectionOutputMulti(conn), buf.ConnectionInputMulti(conn))
+	upstream := cnc.NewConnection(cnc.ConnectionOutputMulti(conn), cnc.ConnectionInputMulti(conn))
 	downstream := p.p.StreamConn(upstream, iv)
 	if upstream == downstream {
 		conn.ProtocolReader = conn

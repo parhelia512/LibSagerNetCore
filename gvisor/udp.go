@@ -2,13 +2,15 @@ package gvisor
 
 import (
 	"fmt"
+	"math"
 	"net"
 	"strconv"
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
+	"gvisor.dev/gvisor/pkg/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip"
-	"gvisor.dev/gvisor/pkg/tcpip/buffer"
+	"gvisor.dev/gvisor/pkg/tcpip/checksum"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
 	"gvisor.dev/gvisor/pkg/tcpip/transport/udp"
@@ -18,7 +20,7 @@ import (
 func gUdpHandler(s *stack.Stack, handler tun.Handler) {
 	s.SetTransportProtocolHandler(udp.ProtocolNumber, func(id stack.TransportEndpointID, buffer *stack.PacketBuffer) bool {
 		// Ref: gVisor pkg/tcpip/transport/udp/endpoint.go HandlePacket
-		udpHdr := header.UDP(buffer.TransportHeader().View())
+		udpHdr := header.UDP(buffer.TransportHeader().View().AsSlice())
 		if int(udpHdr.Length()) > buffer.Data().Size()+header.UDPMinimumSize {
 			// Malformed packet.
 			return true
@@ -37,7 +39,7 @@ func gUdpHandler(s *stack.Stack, handler tun.Handler) {
 			return true
 		}
 
-		data := buffer.Data().ExtractVV()
+		data := buffer.Data().AsRange().ToView().AsSlice()
 		packet := &gUdpPacket{
 			s:        s,
 			id:       &id,
@@ -49,7 +51,7 @@ func gUdpHandler(s *stack.Stack, handler tun.Handler) {
 			IP:   dst.Address.IP(),
 			Port: int(dst.Port),
 		}
-		go handler.NewPacket(src, dst, buf.FromBytes(data.ToView()), func(bytes []byte, addr *net.UDPAddr) (int, error) {
+		go handler.NewPacket(src, dst, buf.FromBytes(data), func(bytes []byte, addr *net.UDPAddr) (int, error) {
 			if addr == nil {
 				addr = destUdpAddr
 			}
@@ -68,8 +70,8 @@ type gUdpPacket struct {
 }
 
 func (p *gUdpPacket) WriteBack(b []byte, addr *net.UDPAddr) (int, error) {
-	v := buffer.View(b)
-	if len(v) > header.UDPMaximumPacketSize {
+	v := buffer.NewViewWithData(b)
+	if v.Size() > header.UDPMaximumPacketSize {
 		// Payload can't possibly fit in a packet.
 		return 0, fmt.Errorf("%s", &tcpip.ErrMessageTooLong{})
 	}
@@ -83,7 +85,7 @@ func (p *gUdpPacket) WriteBack(b []byte, addr *net.UDPAddr) (int, error) {
 		localAddress = p.netHdr.DestinationAddress()
 		localPort = p.id.LocalPort
 	} else {
-		localAddress = tcpip.Address(addr.IP)
+		localAddress = tcpip.AddrFromSlice(addr.IP)
 		localPort = uint16(addr.Port)
 	}
 
@@ -93,19 +95,19 @@ func (p *gUdpPacket) WriteBack(b []byte, addr *net.UDPAddr) (int, error) {
 	}
 	defer route.Release()
 
-	data := v.ToVectorisedView()
+	data := buffer.MakeWithView(v)
 	if err = gSendUDP(route, data, localPort, p.id.RemotePort); err != nil {
 		return 0, fmt.Errorf("%v", err)
 	}
-	return data.Size(), nil
+	return len(b), nil
 }
 
 // gSendUDP sends a UDP segment via the provided network endpoint and under the
 // provided identity.
-func gSendUDP(r *stack.Route, data buffer.VectorisedView, localPort, remotePort uint16) tcpip.Error {
+func gSendUDP(r *stack.Route, data buffer.Buffer, localPort, remotePort uint16) tcpip.Error {
 	pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
 		ReserveHeaderBytes: header.UDPMinimumSize + int(r.MaxHeaderLength()),
-		Data:               data,
+		Payload:            data,
 	})
 	defer pkt.DecRef()
 
@@ -125,11 +127,14 @@ func gSendUDP(r *stack.Route, data buffer.VectorisedView, localPort, remotePort 
 	// transmitter skipped the checksum generation (RFC768).
 	// On IPv6, UDP checksum is not optional (RFC2460 Section 8.1).
 	if r.RequiresTXTransportChecksum() && r.NetProto() == header.IPv6ProtocolNumber {
-		xsum := r.PseudoHeaderChecksum(udp.ProtocolNumber, length)
-		for _, v := range data.Views() {
-			xsum = header.Checksum(v, xsum)
+		xsum := udpHdr.CalculateChecksum(checksum.Combine(
+			r.PseudoHeaderChecksum(udp.ProtocolNumber, length),
+			pkt.Data().Checksum(),
+		))
+		if xsum != math.MaxUint16 {
+			xsum = ^xsum
 		}
-		udpHdr.SetChecksum(^udpHdr.CalculateChecksum(xsum))
+		udpHdr.SetChecksum(xsum)
 	}
 
 	ttl := r.DefaultTTL()

@@ -3,8 +3,6 @@ package libcore
 import (
 	"os"
 
-	"github.com/sagernet/libping"
-	"github.com/v2fly/v2ray-core/v5/common/net"
 	"libcore/stun"
 )
 
@@ -19,7 +17,7 @@ func Unsetenv(key string) error {
 }
 
 func IcmpPing(address string, timeout int32) (int32, error) {
-	return libping.IcmpPing(address, timeout)
+	return icmpPing(address, timeout)
 }
 
 const (
@@ -44,16 +42,4 @@ func StunTest(serverAddress string, socksPort int32) (*StunResult, error) {
 		NatMapping:   int32(natMapping),
 		NatFiltering: int32(natFiltering),
 	}, nil
-}
-
-func EnableConnectionPool() {
-	net.EnableConnectionPool()
-}
-
-func DisableConnectionPool() {
-	net.DisableConnectionPool()
-}
-
-func ResetConnections() {
-	net.ResetConnections()
 }

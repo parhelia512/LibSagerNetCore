@@ -2,15 +2,14 @@ package libcore
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
 
-	"github.com/sagernet/gomobile/asset"
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5/common/platform/filesystem"
+	"golang.org/x/mobile/asset"
 	"libcore/comm"
 )
 
@@ -162,7 +161,7 @@ func extractAssetName(name string, force bool) error {
 		if err != nil {
 			return newError("open version in assets").Base(err)
 		}
-		b, err := ioutil.ReadAll(av)
+		b, err := io.ReadAll(av)
 		comm.CloseIgnore(av)
 		if err != nil {
 			return newError("read internal version").Base(err)
@@ -179,7 +178,7 @@ func extractAssetName(name string, force bool) error {
 		_, assetNotFoundError := os.Stat(dir + name)
 		doExtract = assetNotFoundError != nil || force
 	} else if useOfficialAssets {
-		b, err := ioutil.ReadFile(dir + version)
+		b, err := os.ReadFile(dir + version)
 		if err != nil {
 			doExtract = true
 			_ = os.RemoveAll(version)
@@ -237,13 +236,13 @@ func extractRootCACertsPem() error {
 		return newError("open pem version in assets").Base(err)
 	}
 	defer sumInternal.Close()
-	sumBytes, err := ioutil.ReadAll(sumInternal)
+	sumBytes, err := io.ReadAll(sumInternal)
 	if err != nil {
 		return newError("read internal version").Base(err)
 	}
 	_, pemSha256sumNotExists := os.Stat(sumPath)
 	if pemSha256sumNotExists == nil {
-		sumExternal, err := ioutil.ReadFile(sumPath)
+		sumExternal, err := os.ReadFile(sumPath)
 		if err == nil {
 			if string(sumBytes) == string(sumExternal) {
 				return nil
@@ -264,7 +263,7 @@ func extractRootCACertsPem() error {
 	if err != nil {
 		return newError("write pem file")
 	}
-	return ioutil.WriteFile(sumPath, sumBytes, 0o644)
+	return os.WriteFile(sumPath, sumBytes, 0o644)
 }
 
 func extractAsset(assetPath string, path string) error {

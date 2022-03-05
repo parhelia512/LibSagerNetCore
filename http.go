@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"net/http"
@@ -20,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/Dreamacro/clash/transport/socks5"
-	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 )
 
@@ -74,13 +72,13 @@ func NewHttpClient() HTTPClient {
 
 func (c *httpClient) ModernTLS() {
 	c.tls.MinVersion = tls.VersionTLS12
-	c.tls.CipherSuites = common.Map(tls.CipherSuites(), func(it *tls.CipherSuite) uint16 { return it.ID })
+	c.tls.CipherSuites = Map(tls.CipherSuites(), func(it *tls.CipherSuite) uint16 { return it.ID })
 }
 
 func (c *httpClient) RestrictedTLS() {
 	c.tls.MinVersion = tls.VersionTLS13
-	c.tls.CipherSuites = common.Map(common.Filter(tls.CipherSuites(), func(it *tls.CipherSuite) bool {
-		return common.Contains(it.SupportedVersions, uint16(tls.VersionTLS13))
+	c.tls.CipherSuites = Map(Filter(tls.CipherSuites(), func(it *tls.CipherSuite) bool {
+		return Contains(it.SupportedVersions, uint16(tls.VersionTLS13))
 	}), func(it *tls.CipherSuite) uint16 {
 		return it.ID
 	})
@@ -212,7 +210,7 @@ func (h *httpResponse) errorString() string {
 func (h *httpResponse) GetContent() ([]byte, error) {
 	h.getContentOnce.Do(func() {
 		defer h.Body.Close()
-		h.content, h.contentError = ioutil.ReadAll(h.Body)
+		h.content, h.contentError = io.ReadAll(h.Body)
 	})
 	return h.content, h.contentError
 }

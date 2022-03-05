@@ -120,7 +120,6 @@ func New(dev int32, mtu int32, handler tun.Handler, nicId tcpip.NICID, pcap bool
 
 	gTcpHandler(s, handler)
 	gUdpHandler(s, handler)
-	gIcmpHandler(s, endpoint, handler)
 	gMust(s.CreateNIC(nicId, endpoint))
 	gMust(s.SetSpoofing(nicId, true))
 	gMust(s.SetPromiscuousMode(nicId, true))

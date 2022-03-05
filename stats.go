@@ -1,14 +1,11 @@
 package libcore
 
 import (
-	"container/list"
 	"net"
 	"sync"
 	"sync/atomic"
 
-	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
-	"github.com/v2fly/v2ray-core/v5/transport/internet"
 )
 
 type AppStats struct {
@@ -40,8 +37,6 @@ type appStats struct {
 	downlinkTotal uint64
 
 	deactivateAt int64
-
-	connections list.List
 }
 
 type TrafficListener interface {
@@ -65,22 +60,6 @@ func (t *Tun2ray) ResetAppTraffics() {
 	})
 	for _, uid := range toDel {
 		t.appStats.Delete(uid)
-	}
-}
-
-func (t *Tun2ray) CloseConnections(uid int32) {
-	if !t.trafficStats {
-		return
-	}
-	statsI, ok := t.appStats.Load(uint16(uid))
-	if !ok {
-		return
-	}
-	stats := statsI.(*appStats)
-	stats.Lock()
-	defer stats.Unlock()
-	for element := stats.connections.Front(); element != nil; element = element.Next() {
-		common.Close(element.Value)
 	}
 }
 
@@ -124,31 +103,26 @@ func (t *Tun2ray) ReadAppTraffics(listener TrafficListener) error {
 	return nil
 }
 
-func NewStatsCounterConn(originConn net.Conn, uplink *uint64, downlink *uint64) *internet.StatCounterConn {
-	conn := new(internet.StatCounterConn)
-	conn.Connection = originConn
-	conn.ReadCounter = statsConnWrapper{uplink}
-	conn.WriteCounter = statsConnWrapper{downlink}
-	return conn
+type statsConn struct {
+	net.Conn
+	uplink   *uint64
+	downlink *uint64
 }
 
-type statsConnWrapper struct {
-	counter *uint64
+func (c statsConn) Read(b []byte) (n int, err error) {
+	n, err = c.Conn.Read(b)
+	if err == nil {
+		atomic.AddUint64(c.uplink, uint64(n))
+	}
+	return
 }
 
-func (w statsConnWrapper) Value() int64 {
-	return int64(atomic.LoadUint64(w.counter))
-}
-
-func (w statsConnWrapper) Set(i int64) int64 {
-	value := w.Value()
-	atomic.StoreUint64(w.counter, uint64(i))
-	return value
-}
-
-func (w statsConnWrapper) Add(i int64) int64 {
-	atomic.AddUint64(w.counter, uint64(i))
-	return 0
+func (c statsConn) Write(b []byte) (n int, err error) {
+	n, err = c.Conn.Write(b)
+	if err == nil {
+		atomic.AddUint64(c.downlink, uint64(n))
+	}
+	return
 }
 
 type statsPacketConn struct {

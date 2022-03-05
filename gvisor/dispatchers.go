@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"golang.org/x/sys/unix"
+	"gvisor.dev/gvisor/pkg/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip"
-	"gvisor.dev/gvisor/pkg/tcpip/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
@@ -16,7 +16,7 @@ var bufConfig = []int{128, 256, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768}
 
 type iovecBuffer struct {
 	// views are the actual buffers that hold the packet contents.
-	views []buffer.View
+	views []*buffer.View
 
 	// iovecs are initialized with base pointers/len of the corresponding
 	// entries in the views defined above, except when GSO is enabled
@@ -32,7 +32,7 @@ type iovecBuffer struct {
 
 func newIovecBuffer(sizes []int) *iovecBuffer {
 	b := &iovecBuffer{
-		views: make([]buffer.View, len(sizes)),
+		views: make([]*buffer.View, len(sizes)),
 		sizes: sizes,
 	}
 	b.iovecs = make([]unix.Iovec, len(b.views))
@@ -45,22 +45,22 @@ func (b *iovecBuffer) nextIovecs() []unix.Iovec {
 		if b.views[i] != nil {
 			break
 		}
-		v := buffer.NewView(b.sizes[i])
+		v := buffer.NewViewSize(b.sizes[i])
 		b.views[i] = v
-		b.iovecs[i+vnetHdrOff] = unix.Iovec{Base: &v[0]}
-		b.iovecs[i+vnetHdrOff].SetLen(len(v))
+		b.iovecs[i+vnetHdrOff] = unix.Iovec{Base: v.BasePtr()}
+		b.iovecs[i+vnetHdrOff].SetLen(v.Size())
 	}
 	return b.iovecs
 }
 
-func (b *iovecBuffer) pullViews(n int) buffer.VectorisedView {
-	var views []buffer.View
+func (b *iovecBuffer) pullBuffer(n int) buffer.Buffer {
+	var views []*buffer.View
 	c := 0
 	for i, v := range b.views {
-		c += len(v)
+		c += v.Size()
 		if c >= n {
-			b.views[i].CapLength(len(v) - (c - n))
-			views = append([]buffer.View(nil), b.views[:i+1]...)
+			b.views[i].CapLength(v.Size() - (c - n))
+			views = append(views, b.views[:i+1]...)
 			break
 		}
 	}
@@ -68,7 +68,12 @@ func (b *iovecBuffer) pullViews(n int) buffer.VectorisedView {
 	for i := range views {
 		b.views[i] = nil
 	}
-	return buffer.NewVectorisedView(n, views)
+	pulled := buffer.Buffer{}
+	for _, v := range views {
+		pulled.Append(v)
+	}
+	pulled.Truncate(int64(n))
+	return pulled
 }
 
 // stopFd is an eventfd used to signal the stop of a dispatcher.
@@ -133,8 +138,7 @@ func (d *readVDispatcher) dispatch() (bool, tcpip.Error) {
 	}
 
 	pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-		Data:              d.buf.pullViews(n),
-		IsForwardedPacket: true,
+		Payload: d.buf.pullBuffer(n),
 	})
 	defer pkt.DecRef()
 

@@ -4,10 +4,9 @@ import (
 	"os"
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
-	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
 	"golang.org/x/sys/unix"
+	"gvisor.dev/gvisor/pkg/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip"
-	"gvisor.dev/gvisor/pkg/tcpip/buffer"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/header/parse"
 	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
@@ -20,8 +19,8 @@ import (
 var _ tun.Tun = (*SystemTun)(nil)
 
 var (
-	vlanClient4 = tcpip.Address([]uint8{172, 19, 0, 1})
-	vlanClient6 = tcpip.Address([]uint8{0xfd, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1})
+	vlanClient4 = tcpip.AddrFromSlice([]uint8{172, 19, 0, 1})
+	vlanClient6 = tcpip.AddrFromSlice([]uint8{0xfd, 0xfe, 0xdc, 0xba, 0x98, 0x76, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0x1})
 )
 
 type SystemTun struct {
@@ -53,13 +52,11 @@ func New(dev int32, mtu int32, handler tun.Handler, ipv6Mode int32, errorHandler
 }
 
 func (t *SystemTun) dispatchLoop() {
-	cache := buf.NewSize(int32(t.mtu))
+	cache := buf.NewWithSize(int32(t.mtu))
 	defer cache.Release()
 	data := cache.Use()
 
 	device := os.NewFile(uintptr(t.dev), "tun")
-	element := v2rayNet.AddConnection(device)
-	defer v2rayNet.RemoveConnection(element)
 
 	for {
 		n, err := device.Read(data)
@@ -76,8 +73,8 @@ func (t *SystemTun) dispatchLoop() {
 	}
 }
 
-func (t *SystemTun) writeRawPacket(vv buffer.VectorisedView) tcpip.Error {
-	views := vv.Views()
+func (t *SystemTun) writeRawPacket(pkt stack.PacketBufferPtr) tcpip.Error {
+	views := pkt.AsSlices()
 	iovecs := make([]unix.Iovec, len(views))
 	for i, v := range views {
 		iovecs[i] = rawfile.IovecFromBytes(v)
@@ -100,11 +97,11 @@ func (t *SystemTun) deliverPacket(cache *buf.Buffer, packet []byte) bool {
 			t.processIPv4UDP(cache, ipHdr, ipHdr.Payload())
 			return true
 		case header.ICMPv4ProtocolNumber:
-			return t.processICMPv4(cache, ipHdr, ipHdr.Payload())
+			return t.processICMPv4(ipHdr, ipHdr.Payload())
 		}
 	case header.IPv6Version:
 		pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{
-			Data: buffer.View(packet).ToVectorisedView(),
+			Payload: buffer.MakeWithData(packet),
 		})
 		proto, _, _, _, ok := parse.IPv6(pkt)
 		pkt.DecRef()
@@ -119,7 +116,7 @@ func (t *SystemTun) deliverPacket(cache *buf.Buffer, packet []byte) bool {
 			t.processIPv6UDP(cache, ipHdr, ipHdr.Payload())
 			return true
 		case header.ICMPv6ProtocolNumber:
-			return t.processICMPv6(cache, ipHdr, ipHdr.Payload())
+			return t.processICMPv6(ipHdr, ipHdr.Payload())
 		}
 	}
 	return false

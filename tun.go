@@ -1,31 +1,30 @@
 package libcore
 
-import "C"
 import (
+	"container/list"
 	"context"
-	"fmt"
 	"io"
 	"math"
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5"
-	appOutbound "github.com/v2fly/v2ray-core/v5/app/proxyman/outbound"
+	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
-	"github.com/v2fly/v2ray-core/v5/common/net/pingproto"
 	"github.com/v2fly/v2ray-core/v5/common/session"
+	"github.com/v2fly/v2ray-core/v5/common/task"
+	"github.com/v2fly/v2ray-core/v5/features/dns"
 	"github.com/v2fly/v2ray-core/v5/features/dns/localdns"
-	"github.com/v2fly/v2ray-core/v5/features/outbound"
-	routing_session "github.com/v2fly/v2ray-core/v5/features/routing/session"
-	"github.com/v2fly/v2ray-core/v5/proxy/wireguard"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
-	"golang.org/x/sys/unix"
+	"golang.org/x/net/dns/dnsmessage"
 	"libcore/comm"
 	"libcore/gvisor"
 	"libcore/nat"
@@ -38,6 +37,8 @@ type Tun2ray struct {
 	dev                 tun.Tun
 	router              string
 	v2ray               *V2RayInstance
+	fakedns             bool
+	hijackDns           bool
 	sniffing            bool
 	overrideDestination bool
 	debug               bool
@@ -50,7 +51,8 @@ type Tun2ray struct {
 	appStats  sync.Map
 	lockTable sync.Map
 
-	defaultOutboundForPing outbound.Handler
+	connectionsLock sync.Mutex
+	connections     list.List
 }
 
 type TunConfig struct {
@@ -61,9 +63,10 @@ type TunConfig struct {
 	V2Ray               *V2RayInstance
 	Gateway4            string
 	Gateway6            string
-	BindUpstream        Protector
 	IPv6Mode            int32
 	Implementation      int32
+	FakeDNS             bool
+	HijackDNS           bool
 	Sniffing            bool
 	OverrideDestination bool
 	Debug               bool
@@ -71,6 +74,7 @@ type TunConfig struct {
 	TrafficStats        bool
 	PCap                bool
 	ErrorHandler        ErrorHandler
+	LocalResolver       LocalResolver
 }
 
 type ErrorHandler interface {
@@ -88,6 +92,8 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 		v2ray:               config.V2Ray,
 		sniffing:            config.Sniffing,
 		overrideDestination: config.OverrideDestination,
+		fakedns:             config.FakeDNS,
+		hijackDns:           config.HijackDNS,
 		debug:               config.Debug,
 		dumpUid:             config.DumpUID,
 		trafficStats:        config.TrafficStats,
@@ -124,51 +130,91 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 	}
 
 	dc := config.V2Ray.dnsClient
+	if config.FakeDNS {
+		_, _ = dns.LookupIPWithOption(dc, "placeholder", dns.IPOption{
+			IPv4Enable: true,
+			IPv6Enable: true,
+			FakeEnable: true,
+		})
+	}
 	internet.UseAlternativeSystemDialer(&protectedDialer{
 		protector: config.Protector,
-		resolver: func(ctx context.Context, domain string) ([]net.IP, error) {
-			ips, _, err := dc.LookupDefault(ctx, domain)
-			return ips, err
+		resolver: func(domain string) ([]net.IP, error) {
+			return dns.LookupIPWithOption(dc, domain, dns.IPOption{
+				IPv4Enable: true,
+				IPv6Enable: true,
+				FakeEnable: false,
+			})
 		},
 	})
-	if config.BindUpstream != nil {
-		pingproto.ControlFunc = func(fd uintptr) {
-			config.BindUpstream.Protect(int32(fd))
-		}
+
+	if !config.Protect {
+		localdns.SetLookupFunc(nil)
 	} else {
-		pingproto.ControlFunc = func(fd uintptr) {
-			config.Protector.Protect(int32(fd))
-			bindToUpstream(fd)
-		}
-	}
-	if defaultOutbound, ok := t.v2ray.outboundManager.GetDefaultHandler().(*appOutbound.Handler); ok {
-		if _, isWireGuard := defaultOutbound.GetOutbound().(*wireguard.Client); isWireGuard {
-			t.defaultOutboundForPing = defaultOutbound
-		}
+		localdns.SetLookupFunc(func(network, host string) ([]net.IP, error) {
+			response, err := config.LocalResolver.LookupIP(network, host)
+			if err != nil {
+				errStr := err.Error()
+				if strings.HasPrefix(errStr, "rcode") {
+					r, _ := strconv.Atoi(strings.Split(errStr, " ")[1])
+					return nil, dns.RCodeError(r)
+				}
+				return nil, err
+			}
+			if response == "" {
+				return nil, dns.ErrEmptyResponse
+			}
+			addrs := Filter(strings.Split(response, ","), func(it string) bool {
+				return len(strings.TrimSpace(it)) >= 0
+			})
+			ips := make([]net.IP, len(addrs))
+			for i, addr := range addrs {
+				ip := net.ParseIP(addr)
+				if ip.To4() != nil {
+					ip = ip.To4()
+				}
+				ips[i] = ip
+			}
+			if len(ips) == 0 {
+				return nil, dns.ErrEmptyResponse
+			}
+
+			return ips, nil
+		})
 	}
 
 	internet.UseAlternativeSystemDNSDialer(&protectedDialer{
 		protector: config.Protector,
-		resolver: func(ctx context.Context, domain string) ([]net.IP, error) {
-			ips, _, err := localdns.Client().LookupDefault(ctx, domain)
-			return ips, err
+		resolver: func(domain string) ([]net.IP, error) {
+			return localdns.New().LookupIP(domain)
 		},
 	})
 
 	return t, nil
 }
 
+func (t *Tun2ray) ResetNetwork() {
+	t.connectionsLock.Lock()
+	for item := t.connections.Front(); item != nil; item = item.Next() {
+		common.Close(item.Value)
+	}
+	t.connections.Init()
+	t.connectionsLock.Unlock()
+}
+
 func (t *Tun2ray) Close() {
-	pingproto.ControlFunc = nil
 	internet.UseAlternativeSystemDialer(nil)
 	internet.UseAlternativeSystemDNSDialer(nil)
+	localdns.SetLookupFunc(nil)
 	comm.CloseIgnore(t.dev)
+	t.connectionsLock.Lock()
+	for item := t.connections.Front(); item != nil; item = item.Next() {
+		common.Close(item.Value)
+	}
+	t.connectionsLock.Unlock()
 }
 
 func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNet.Destination, conn net.Conn) {
-	element := v2rayNet.AddConnection(conn)
-	defer v2rayNet.RemoveConnection(element)
-
 	inbound := &session.Inbound{
 		Source:      source,
 		Tag:         "tun",
@@ -177,6 +223,11 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 	}
 
 	isDns := destination.Address.String() == t.router
+	/*
+		if !isDns && t.hijackDns {
+			isDns = destination.Port == 53
+		}
+	*/
 	if isDns {
 		inbound.Tag = "dns-in"
 	}
@@ -212,10 +263,14 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 	ctx := core.WithContext(context.Background(), t.v2ray.core)
 	ctx = session.ContextWithInbound(ctx, inbound)
 
-	if !isDns && t.sniffing {
+	if !isDns && (t.sniffing || t.fakedns) {
 		req := session.SniffingRequest{
-			Enabled:   true,
-			RouteOnly: !t.overrideDestination,
+			Enabled:      true,
+			MetadataOnly: t.fakedns && !t.sniffing,
+			RouteOnly:    !t.overrideDestination,
+		}
+		if t.fakedns {
+			req.OverrideDestinationForProtocol = append(req.OverrideDestinationForProtocol, "fakedns")
 		}
 		if t.sniffing {
 			req.OverrideDestinationForProtocol = append(req.OverrideDestinationForProtocol, "http", "tls")
@@ -251,22 +306,38 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 		atomic.AddInt32(&stats.tcpConn, 1)
 		atomic.AddUint32(&stats.tcpConnTotal, 1)
 		atomic.StoreInt64(&stats.deactivateAt, 0)
-		conn = NewStatsCounterConn(conn, &stats.uplink, &stats.downlink)
-		stats.Lock()
-		statsElement := stats.connections.PushBack(conn)
-		stats.Unlock()
 		defer func() {
 			if atomic.AddInt32(&stats.tcpConn, -1)+atomic.LoadInt32(&stats.udpConn) == 0 {
 				atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
 			}
-			stats.Lock()
-			stats.connections.Remove(statsElement)
-			stats.Unlock()
 		}()
+		conn = statsConn{conn, &stats.uplink, &stats.downlink}
 	}
+	t.connectionsLock.Lock()
+	element := t.connections.PushBack(conn)
+	t.connectionsLock.Unlock()
+
 	inbound.Conn = conn
 
-	_ = t.v2ray.dispatcher.DispatchConn(ctx, destination, conn, true)
+	link, err := t.v2ray.dispatcher.Dispatch(ctx, destination)
+	if err != nil {
+		newError("[TCP] dispatch failed: ", err).WriteToLog()
+		return
+	} else {
+		_ = task.Run(ctx, func() error {
+			_ = buf.Copy(buf.NewReader(conn), link.Writer)
+			return io.EOF
+		}, func() error {
+			_ = buf.Copy(link.Reader, buf.NewWriter(conn))
+			return io.EOF
+		})
+	}
+
+	comm.CloseIgnore(conn, link.Reader, link.Writer)
+
+	t.connectionsLock.Lock()
+	t.connections.Remove(element)
+	t.connectionsLock.Unlock()
 }
 
 func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.Destination, data *buf.Buffer, writeBack func([]byte, *net.UDPAddr) (int, error), closer io.Closer) {
@@ -315,6 +386,13 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	}
 	isDns := destination.Address.String() == t.router
 
+	if !isDns && t.hijackDns {
+		var parser dnsmessage.Parser
+		if _, err := parser.Start(data.Bytes()); err == nil {
+			question, err := parser.Question()
+			isDns = err == nil && question.Class == dnsmessage.ClassINET && (question.Type == dnsmessage.TypeA || question.Type == dnsmessage.TypeAAAA)
+		}
+	}
 	if isDns {
 		inbound.Tag = "dns-in"
 	}
@@ -323,7 +401,6 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	var self bool
 
 	if t.dumpUid || t.trafficStats {
-
 		u, err := dumpUid(source, destination)
 		if err == nil {
 			if u > 19999 {
@@ -369,10 +446,14 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	ctx := core.WithContext(context.Background(), t.v2ray.core)
 	ctx = session.ContextWithInbound(ctx, inbound)
 
-	if !isDns && t.sniffing {
+	if !isDns && (t.sniffing || t.fakedns) {
 		req := session.SniffingRequest{
-			Enabled:   true,
-			RouteOnly: !t.overrideDestination,
+			Enabled:      true,
+			MetadataOnly: t.fakedns && !t.sniffing,
+			RouteOnly:    !t.overrideDestination,
+		}
+		if t.fakedns {
+			req.OverrideDestinationForProtocol = append(req.OverrideDestinationForProtocol, "fakedns")
 		}
 		if t.sniffing {
 			req.OverrideDestinationForProtocol = append(req.OverrideDestinationForProtocol, "quic")
@@ -387,8 +468,6 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 		logrus.Errorf("[UDP] dial failed: %s", err.Error())
 		return
 	}
-	element := v2rayNet.AddConnection(conn)
-	defer v2rayNet.RemoveConnection(element)
 
 	var stats *appStats
 	if t.trafficStats && !self && !isDns {
@@ -416,19 +495,17 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 		atomic.AddInt32(&stats.udpConn, 1)
 		atomic.AddUint32(&stats.udpConnTotal, 1)
 		atomic.StoreInt64(&stats.deactivateAt, 0)
-		conn = statsPacketConn{conn, &stats.uplink, &stats.downlink}
-		stats.Lock()
-		statsElement := stats.connections.PushBack(conn)
-		stats.Unlock()
 		defer func() {
 			if atomic.AddInt32(&stats.udpConn, -1)+atomic.LoadInt32(&stats.tcpConn) == 0 {
 				atomic.StoreInt64(&stats.deactivateAt, time.Now().Unix())
 			}
-			stats.Lock()
-			stats.connections.Remove(statsElement)
-			stats.Unlock()
 		}()
+		conn = statsPacketConn{conn, &stats.uplink, &stats.downlink}
 	}
+
+	t.connectionsLock.Lock()
+	element := t.connections.PushBack(conn)
+	t.connectionsLock.Unlock()
 
 	t.udpTable.Store(natKey, conn)
 
@@ -456,111 +533,10 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 		}
 	}
 	// close
-	comm.CloseIgnore(closer)
+	comm.CloseIgnore(conn, closer)
 	t.udpTable.Delete(natKey)
-}
 
-func (t *Tun2ray) NewPingPacket(source v2rayNet.Destination, destination v2rayNet.Destination, message *buf.Buffer, writeBack func([]byte) error, closer io.Closer) bool {
-	natKey := fmt.Sprint(source.Address, "-", destination.Address)
-
-	sendTo := func() bool {
-		iConn, ok := t.udpTable.Load(natKey)
-		if !ok {
-			return false
-		}
-		conn := iConn.(packetConn)
-		err := conn.writeTo(message, &net.UDPAddr{
-			IP:   destination.Address.IP(),
-			Port: int(destination.Port),
-		})
-		if err != nil {
-			_ = conn.Close()
-			newError("failed to write ping request to ", destination.Address).Base(err).WriteToLog()
-		}
-		return true
-	}
-
-	var cond *sync.Cond
-
-	if sendTo() {
-		comm.CloseIgnore(closer)
-		return true
-	} else {
-		iCond, loaded := t.lockTable.LoadOrStore(natKey, sync.NewCond(&sync.Mutex{}))
-		cond = iCond.(*sync.Cond)
-		if loaded {
-			cond.L.Lock()
-			cond.Wait()
-			sendTo()
-			cond.L.Unlock()
-
-			comm.CloseIgnore(closer)
-			return true
-		}
-	}
-
-	defer func() {
-		t.lockTable.Delete(natKey)
-		cond.Broadcast()
-	}()
-
-	ctx := core.WithContext(context.Background(), t.v2ray.core)
-	ctx = session.ContextWithInbound(ctx, &session.Inbound{
-		Source:      source,
-		Tag:         "tun",
-		NetworkType: networkType,
-		WifiSSID:    wifiSSID,
-	})
-	ctx = session.ContextWithOutbound(ctx, &session.Outbound{Target: destination})
-	ctx = session.ContextWithContent(ctx, &session.Content{Protocol: "ping"})
-
-	var handler outbound.Handler
-	if route, err := t.v2ray.router.PickRoute(routing_session.AsRoutingContext(ctx)); err == nil {
-		tag := route.GetOutboundTag()
-		handler = t.v2ray.outboundManager.GetHandler(tag)
-		if handler != nil {
-			newError("taking detour [", tag, "] for [", destination.Address, "]").WriteToLog()
-		} else {
-			newError("non existing tag: ", tag).AtWarning().WriteToLog()
-			return false
-		}
-	} else if t.defaultOutboundForPing != nil {
-		handler = t.defaultOutboundForPing
-		newError("default route for ", destination.Address).AtWarning().WriteToLog()
-
-	} else {
-		return false
-	}
-
-	conn := t.v2ray.handleUDP(ctx, handler, destination, time.Second*30)
-
-	element := v2rayNet.AddConnection(conn)
-	defer v2rayNet.RemoveConnection(element)
-
-	t.udpTable.Store(natKey, conn)
-
-	go sendTo()
-
-	go func() {
-		for {
-			buffer, _, err := conn.readFrom()
-			if err != nil {
-				newError("failed to read ping response from ", destination.Address).Base(err).WriteToLog()
-				break
-			}
-			err = writeBack(buffer.Bytes())
-			buffer.Release()
-			if err != nil {
-				if err != unix.ENETUNREACH {
-					newError("failed to write ping response back").Base(err).WriteToLog()
-				}
-				break
-			}
-		}
-		// close
-		comm.CloseIgnore(closer)
-		t.udpTable.Delete(natKey)
-	}()
-
-	return true
+	t.connectionsLock.Lock()
+	t.connections.Remove(element)
+	t.connectionsLock.Unlock()
 }

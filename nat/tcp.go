@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
 	"gvisor.dev/gvisor/pkg/tcpip"
+	"gvisor.dev/gvisor/pkg/tcpip/checksum"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"libcore/comm"
 )
@@ -25,7 +26,7 @@ func newTcpForwarder(tun *SystemTun) (*tcpForwarder, error) {
 	address := &net.TCPAddr{}
 	if tun.ipv6Mode == comm.IPv6Disable {
 		network = "tcp4"
-		address.IP = net.IP(vlanClient4)
+		address.IP = net.IP(vlanClient4.AsSlice())
 	} else {
 		network = "tcp"
 		address.IP = net.IPv6zero
@@ -37,7 +38,7 @@ func newTcpForwarder(tun *SystemTun) (*tcpForwarder, error) {
 	addr := listener.Addr().(*net.TCPAddr)
 	port := uint16(addr.Port)
 	newError("tcp forwarder started at ", addr).AtDebug().WriteToLog()
-	return &tcpForwarder{tun, port, listener, cache.NewLRUCache(
+	return &tcpForwarder{tun, port, listener, cache.New(
 		cache.WithAge(300),
 		cache.WithUpdateAgeOnGet(),
 	)}, nil
@@ -52,7 +53,7 @@ func (t *tcpForwarder) dispatch() (bool, error) {
 	if ip4 := addr.IP.To4(); ip4 != nil {
 		addr.IP = ip4
 	}
-	key := peerKey{tcpip.Address(addr.IP), uint16(addr.Port)}
+	key := peerKey{tcpip.AddrFromSlice(addr.IP), uint16(addr.Port)}
 	var session *peerValue
 	iSession, ok := t.sessions.Get(peerKey{key.destinationAddress, key.sourcePort})
 	if ok {
@@ -63,12 +64,12 @@ func (t *tcpForwarder) dispatch() (bool, error) {
 	}
 
 	source := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(session.sourceAddress)),
+		Address: v2rayNet.IPAddress(session.sourceAddress.AsSlice()),
 		Port:    v2rayNet.Port(key.sourcePort),
 		Network: v2rayNet.Network_TCP,
 	}
 	destination := v2rayNet.Destination{
-		Address: v2rayNet.IPAddress([]byte(key.destinationAddress)),
+		Address: v2rayNet.IPAddress(key.destinationAddress.AsSlice()),
 		Port:    v2rayNet.Port(session.destinationPort),
 		Network: v2rayNet.Network_TCP,
 	}
@@ -139,9 +140,9 @@ func (t *tcpForwarder) processIPv4(ipHdr header.IPv4, tcpHdr header.TCP) {
 	ipHdr.SetChecksum(0)
 	ipHdr.SetChecksum(^ipHdr.CalculateChecksum())
 	tcpHdr.SetChecksum(0)
-	tcpHdr.SetChecksum(^tcpHdr.CalculateChecksum(header.ChecksumCombine(
+	tcpHdr.SetChecksum(^tcpHdr.CalculateChecksum(checksum.Combine(
 		header.PseudoHeaderChecksum(header.TCPProtocolNumber, ipHdr.SourceAddress(), ipHdr.DestinationAddress(), uint16(len(tcpHdr))),
-		header.Checksum(tcpHdr.Payload(), 0),
+		checksum.Checksum(tcpHdr.Payload(), 0),
 	)))
 
 	t.tun.writeBuffer(ipHdr)
@@ -186,9 +187,9 @@ func (t *tcpForwarder) processIPv6(ipHdr header.IPv6, tcpHdr header.TCP) {
 	}
 
 	tcpHdr.SetChecksum(0)
-	tcpHdr.SetChecksum(^tcpHdr.CalculateChecksum(header.ChecksumCombine(
+	tcpHdr.SetChecksum(^tcpHdr.CalculateChecksum(checksum.Combine(
 		header.PseudoHeaderChecksum(header.TCPProtocolNumber, ipHdr.SourceAddress(), ipHdr.DestinationAddress(), uint16(len(tcpHdr))),
-		header.Checksum(tcpHdr.Payload(), 0),
+		checksum.Checksum(tcpHdr.Payload(), 0),
 	)))
 
 	t.tun.writeBuffer(ipHdr)
