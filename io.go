@@ -2,19 +2,11 @@ package libcore
 
 import (
 	"io"
-	"net"
 	"os"
 
 	"github.com/ulikunitz/xz"
-	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"libcore/comm"
 )
-
-type packetConn interface {
-	readFrom() (buffer *buf.Buffer, addr net.Addr, err error)
-	writeTo(buffer *buf.Buffer, addr net.Addr) (err error)
-	io.Closer
-}
 
 func Unxz(archive string, path string) error {
 	i, err := os.Open(archive)

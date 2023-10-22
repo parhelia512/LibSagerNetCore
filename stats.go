@@ -4,8 +4,6 @@ import (
 	"net"
 	"sync"
 	"sync/atomic"
-
-	"github.com/v2fly/v2ray-core/v5/common/buf"
 )
 
 type AppStats struct {
@@ -126,24 +124,23 @@ func (c statsConn) Write(b []byte) (n int, err error) {
 }
 
 type statsPacketConn struct {
-	packetConn
+	net.PacketConn
 	uplink   *uint64
 	downlink *uint64
 }
 
-func (c statsPacketConn) readFrom() (buffer *buf.Buffer, addr net.Addr, err error) {
-	buffer, addr, err = c.packetConn.readFrom()
+func (c statsPacketConn) ReadFrom(p []byte) (n int, addr net.Addr, err error) {
+	n, addr, err = c.PacketConn.ReadFrom(p)
 	if err == nil {
-		atomic.AddUint64(c.downlink, uint64(buffer.Len()))
+		atomic.AddUint64(c.downlink, uint64(n))
 	}
 	return
 }
 
-func (c statsPacketConn) writeTo(buffer *buf.Buffer, addr net.Addr) (err error) {
-	length := buffer.Len()
-	err = c.packetConn.writeTo(buffer, addr)
+func (c statsPacketConn) WriteTo(p []byte, addr net.Addr) (n int, err error) {
+	n, err = c.PacketConn.WriteTo(p, addr)
 	if err == nil {
-		atomic.AddUint64(c.uplink, uint64(length))
+		atomic.AddUint64(c.uplink, uint64(n))
 	}
 	return
 }

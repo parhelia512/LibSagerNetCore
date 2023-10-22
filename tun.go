@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/Dreamacro/clash/common/pool"
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
@@ -348,8 +349,8 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 		if !ok {
 			return false
 		}
-		conn := iConn.(packetConn)
-		err := conn.writeTo(data, &net.UDPAddr{
+		conn := iConn.(net.PacketConn)
+		_, err := conn.WriteTo(data.Bytes(), &net.UDPAddr{
 			IP:   destination.Address.IP(),
 			Port: int(destination.Port),
 		})
@@ -463,7 +464,7 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 		})
 	}
 
-	conn, err := t.v2ray.dialUDP(ctx, destination, time.Minute*5)
+	conn, err := t.v2ray.dialUDP(ctx)
 	if err != nil {
 		logrus.Errorf("[UDP] dial failed: %s", err.Error())
 		return
@@ -514,8 +515,9 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	t.lockTable.Delete(natKey)
 	cond.Broadcast()
 
+	buffer := pool.Get(pool.RelayBufferSize)
 	for {
-		buffer, addr, err := conn.readFrom()
+		n, addr, err := conn.ReadFrom(buffer)
 		if err != nil {
 			break
 		}
@@ -523,16 +525,16 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 			addr = nil
 		}
 		if addr, ok := addr.(*net.UDPAddr); ok {
-			_, err = writeBack(buffer.Bytes(), addr)
+			_, err = writeBack(buffer[:n], addr)
 		} else {
-			_, err = writeBack(buffer.Bytes(), nil)
+			_, err = writeBack(buffer[:n], nil)
 		}
-		buffer.Release()
 		if err != nil {
 			break
 		}
 	}
 	// close
+	_ = pool.Put(buffer)
 	comm.CloseIgnore(conn, closer)
 	t.udpTable.Delete(natKey)
 
