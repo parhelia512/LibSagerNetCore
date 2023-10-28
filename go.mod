@@ -8,7 +8,7 @@ require (
 	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
-	github.com/v2fly/v2ray-core/v5 v5.10.0
+	github.com/v2fly/v2ray-core/v5 v5.10.1
 	golang.org/x/mobile v0.0.0-20231006135142-2b44d11868fe
 	golang.org/x/net v0.17.0
 	golang.org/x/sys v0.13.0
@@ -17,7 +17,7 @@ require (
 
 //replace github.com/v2fly/v2ray-core/v5 => ../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.10.1-0.20231027145800-7214f84ffc69
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.10.2-0.20231028025508-943977999209
 
 require (
 	github.com/Dreamacro/protobytes v0.0.0-20230617041236-6500a9f4f158 // indirect
