@@ -69,8 +69,8 @@ github.com/dgryski/go-metro v0.0.0-20200812162917-85c65e2d0165/go.mod h1:c9O8+fp
 github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152 h1:ED31mPIxDJnrLt9W9dH5xgd/6KjzEACKHBVGQ33czc0=
 github.com/dgryski/go-rc2 v0.0.0-20150621095337-8a9021637152/go.mod h1:I9fhc/EvSg88cDxmfQ47v35Ssz9rlFunL/KY0A1JAYI=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
-github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231125052316-9d0a66b8ff9d h1:mtgJkCVnq24EmPwYIAq+P8aU3BK0YWLK41Qxv8KyCkg=
-github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231125052316-9d0a66b8ff9d/go.mod h1:pFgoEFpDeh2MYgyYbLGJuQiWDmntwQPJp4kagL2YlXM=
+github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231126150352-bd5e21fff8a7 h1:0oaRzhuIxHu4JQMjf8QmQPC8NSmMLfxnvrbh3tSTERo=
+github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231126150352-bd5e21fff8a7/go.mod h1:pFgoEFpDeh2MYgyYbLGJuQiWDmntwQPJp4kagL2YlXM=
 github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a h1:YtdtTUN1iH97s+6PUjLnaiKSQj4oG1/EZ3N9bx6g4kU=
 github.com/ebfe/bcrypt_pbkdf v0.0.0-20140212075826-3c8d2dcb253a/go.mod h1:/CZpbhAusDOobpcb9yubw46kdYjq0zRC0Wpg9a9zFQM=
 github.com/ebfe/rc2 v0.0.0-20131011165748-24b9757f5521 h1:fBHFH+Y/GPGFGo7LIrErQc3p2MeAhoIQNgaxPWYsSxk=

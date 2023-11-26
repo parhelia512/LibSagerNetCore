@@ -21,7 +21,7 @@ replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github
 
 //replace github.com/v2fly/v2ray-core/v5 => ../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231125052316-9d0a66b8ff9d
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.12.2-0.20231126150352-bd5e21fff8a7
 
 require (
 	github.com/Dreamacro/protobytes v0.0.0-20230617041236-6500a9f4f158 // indirect
