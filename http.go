@@ -18,8 +18,9 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/Dreamacro/clash/transport/socks5"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
+
+	"libcore/clash/transport/socks5"
 )
 
 type HTTPClient interface {

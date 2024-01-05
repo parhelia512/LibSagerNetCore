@@ -5,12 +5,13 @@ import (
 	"flag"
 	"strconv"
 
-	"github.com/Dreamacro/clash/transport/ssr/obfs"
-	"github.com/Dreamacro/clash/transport/ssr/protocol"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/v2fly/v2ray-core/v5/common/net/cnc"
 	"github.com/v2fly/v2ray-core/v5/proxy/shadowsocks"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
+
+	"libcore/clash/transport/ssr/obfs"
+	"libcore/clash/transport/ssr/protocol"
 )
 
 var (

@@ -5,12 +5,12 @@ import (
 	"net"
 	"time"
 
-	"github.com/Dreamacro/clash/common/cache"
 	"github.com/sirupsen/logrus"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/checksum"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
+	"libcore/clash/common/cache"
 	"libcore/comm"
 )
 

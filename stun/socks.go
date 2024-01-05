@@ -3,7 +3,7 @@ package stun
 import (
 	"net"
 
-	"github.com/Dreamacro/clash/transport/socks5"
+	"libcore/clash/transport/socks5"
 )
 
 type socksPacketConn struct {

@@ -5,7 +5,6 @@ go 1.21.1
 toolchain go1.21.5
 
 require (
-	github.com/Dreamacro/clash v1.18.0
 	github.com/golang/protobuf v1.5.3
 	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
@@ -24,7 +23,6 @@ replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github
 replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.13.1-0.20231223150053-fe6574b88c12
 
 require (
-	github.com/Dreamacro/protobytes v0.0.0-20230617041236-6500a9f4f158 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect

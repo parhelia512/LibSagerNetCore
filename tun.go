@@ -14,7 +14,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/Dreamacro/clash/common/pool"
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
@@ -26,6 +25,7 @@ import (
 	"github.com/v2fly/v2ray-core/v5/features/dns/localdns"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
 	"golang.org/x/net/dns/dnsmessage"
+	"libcore/clash/common/pool"
 	"libcore/comm"
 	"libcore/gvisor"
 	"libcore/nat"
