@@ -1,10 +1,10 @@
 package libcore
 
 import (
-	"github.com/golang/protobuf/proto"
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5/app/observatory"
 	"github.com/v2fly/v2ray-core/v5/features/extension"
+	"google.golang.org/protobuf/proto"
 )
 
 func (instance *V2RayInstance) GetObservatoryStatus(tag string) ([]byte, error) {
