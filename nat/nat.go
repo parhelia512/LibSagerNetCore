@@ -73,7 +73,7 @@ func (t *SystemTun) dispatchLoop() {
 	}
 }
 
-func (t *SystemTun) writeRawPacket(pkt stack.PacketBufferPtr) tcpip.Error {
+func (t *SystemTun) writeRawPacket(pkt *stack.PacketBuffer) tcpip.Error {
 	views := pkt.AsSlices()
 	iovecs := make([]unix.Iovec, len(views))
 	for i, v := range views {

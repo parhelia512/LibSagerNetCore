@@ -38,7 +38,7 @@ func newRwEndpoint(dev int32, mtu int32) (*rwEndpoint, error) {
 	return e, nil
 }
 
-func (e *rwEndpoint) InjectInbound(networkProtocol tcpip.NetworkProtocolNumber, pkt stack.PacketBufferPtr) {
+func (e *rwEndpoint) InjectInbound(networkProtocol tcpip.NetworkProtocolNumber, pkt *stack.PacketBuffer) {
 	go e.dispatcher.DeliverNetworkPacket(networkProtocol, pkt)
 }
 
@@ -126,11 +126,11 @@ func (*rwEndpoint) ARPHardwareType() header.ARPHardwareType {
 }
 
 // AddHeader implements stack.LinkEndpoint.AddHeader.
-func (e *rwEndpoint) AddHeader(stack.PacketBufferPtr) {
+func (e *rwEndpoint) AddHeader(*stack.PacketBuffer) {
 }
 
 // ParseHeader implements stack.LinkEndpoint.ParseHeader.
-func (*rwEndpoint) ParseHeader(stack.PacketBufferPtr) bool {
+func (*rwEndpoint) ParseHeader(*stack.PacketBuffer) bool {
 	return true
 }
 
