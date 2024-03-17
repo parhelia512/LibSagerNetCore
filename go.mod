@@ -77,4 +77,4 @@ replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github
 
 //replace github.com/v2fly/v2ray-core/v5 => ../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.1-0.20240316131717-1d1034f90f89
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.2-0.20240317034925-a3b007df9a3d
