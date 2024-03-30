@@ -6,8 +6,8 @@ require (
 	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
-	github.com/v2fly/v2ray-core/v5 v5.15.0
-	golang.org/x/mobile v0.0.0-20240213143359-d1f7d3436075
+	github.com/v2fly/v2ray-core/v5 v5.15.1 // replaced
+	golang.org/x/mobile v0.0.0-20240326195318-268e6c3a80d1
 	golang.org/x/net v0.22.0
 	golang.org/x/sys v0.18.0
 	google.golang.org/protobuf v1.33.0
@@ -75,6 +75,6 @@ require (
 
 replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
 
-//replace github.com/v2fly/v2ray-core/v5 => ../v2ray-core
+//replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
 replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.2-0.20240317034925-a3b007df9a3d
