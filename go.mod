@@ -6,7 +6,7 @@ require (
 	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
-	github.com/v2fly/v2ray-core/v5 v5.15.1 // replaced
+	github.com/v2fly/v2ray-core/v5 v5.15.3 // replaced
 	golang.org/x/mobile v0.0.0-20240404231514-09dbf07665ed
 	golang.org/x/net v0.24.0
 	golang.org/x/sys v0.19.0
@@ -84,4 +84,4 @@ replace github.com/apernet/hysteria/core v1.3.5 => github.com/JimmyHuang454/hyst
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.2-0.20240413041344-f0d882b987d8
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.4-0.20240419062226-3b237abf9ca8
