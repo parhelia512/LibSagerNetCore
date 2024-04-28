@@ -1,17 +1,18 @@
 package libcore
 
 import (
-	"github.com/v2fly/v2ray-core/v5/proxy/shadowsocks"
-	"github.com/v2fly/v2ray-core/v5/proxy/shadowsocks/plugin/self"
+	ss_common "github.com/v2fly/v2ray-core/v5/proxy/shadowsocks/common"
+	"github.com/v2fly/v2ray-core/v5/proxy/sip003"
+	"github.com/v2fly/v2ray-core/v5/proxy/sip003/self"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
 
 	"libcore/clash/transport/simple-obfs"
 )
 
-var _ shadowsocks.StreamPlugin = (*obfsLocalPlugin)(nil)
+var _ sip003.StreamPlugin = (*obfsLocalPlugin)(nil)
 
 func init() {
-	shadowsocks.RegisterPlugin("obfs-local", func() shadowsocks.SIP003Plugin {
+	sip003.RegisterPlugin("obfs-local", func() sip003.Plugin {
 		return new(obfsLocalPlugin)
 	})
 }
@@ -22,7 +23,7 @@ type obfsLocalPlugin struct {
 	port string
 }
 
-func (p *obfsLocalPlugin) Init(_ string, _ string, _ string, remotePort string, pluginOpts string, _ []string, _ *shadowsocks.MemoryAccount) error {
+func (p *obfsLocalPlugin) Init(_ string, _ string, _ string, remotePort string, pluginOpts string, _ []string, _ *ss_common.MemoryAccount) error {
 	options, err := self.ParsePluginOptions(pluginOpts)
 	if err != nil {
 		return newError("obfs-local: failed to parse plugin options").Base(err)

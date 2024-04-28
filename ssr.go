@@ -7,7 +7,8 @@ import (
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/v2fly/v2ray-core/v5/common/net/cnc"
-	"github.com/v2fly/v2ray-core/v5/proxy/shadowsocks"
+	ss_common "github.com/v2fly/v2ray-core/v5/proxy/shadowsocks/common"
+	"github.com/v2fly/v2ray-core/v5/proxy/sip003"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
 
 	"libcore/clash/transport/ssr/obfs"
@@ -15,13 +16,13 @@ import (
 )
 
 var (
-	_ shadowsocks.SIP003Plugin   = (*shadowsocksrPlugin)(nil)
-	_ shadowsocks.StreamPlugin   = (*shadowsocksrPlugin)(nil)
-	_ shadowsocks.ProtocolPlugin = (*shadowsocksrPlugin)(nil)
+	_ sip003.Plugin         = (*shadowsocksrPlugin)(nil)
+	_ sip003.StreamPlugin   = (*shadowsocksrPlugin)(nil)
+	_ sip003.ProtocolPlugin = (*shadowsocksrPlugin)(nil)
 )
 
 func init() {
-	shadowsocks.RegisterPlugin("shadowsocksr", func() shadowsocks.SIP003Plugin {
+	sip003.RegisterPlugin("shadowsocksr", func() sip003.Plugin {
 		return new(shadowsocksrPlugin)
 	})
 }
@@ -38,7 +39,7 @@ type shadowsocksrPlugin struct {
 	p protocol.Protocol
 }
 
-func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remotePort string, _ string, pluginArgs []string, account *shadowsocks.MemoryAccount) error {
+func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remotePort string, _ string, pluginArgs []string, account *ss_common.MemoryAccount) error {
 	fs := flag.NewFlagSet("shadowsocksr", flag.ContinueOnError)
 	fs.StringVar(&p.obfs, "obfs", "origin", "")
 	fs.StringVar(&p.obfsParam, "obfs-param", "", "")
@@ -84,7 +85,7 @@ func (p *shadowsocksrPlugin) StreamConn(conn internet.Connection) internet.Conne
 	return p.o.StreamConn(conn)
 }
 
-func (p *shadowsocksrPlugin) ProtocolConn(conn *shadowsocks.ProtocolConn, iv []byte) {
+func (p *shadowsocksrPlugin) ProtocolConn(conn *sip003.ProtocolConn, iv []byte) {
 	upstream := cnc.NewConnection(cnc.ConnectionOutputMulti(conn), cnc.ConnectionInputMulti(conn))
 	downstream := p.p.StreamConn(upstream, iv)
 	if upstream == downstream {

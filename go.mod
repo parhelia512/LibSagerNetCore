@@ -1,6 +1,6 @@
 module libcore
 
-go 1.21.8
+go 1.22.0
 
 require (
 	github.com/pion/stun/v2 v2.0.0
@@ -47,7 +47,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/quic-go v0.42.0 // indirect
+	github.com/quic-go/quic-go v0.43.0 // indirect
 	github.com/refraction-networking/utls v1.6.4 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
 	github.com/sagernet/sing v0.3.8 // indirect
@@ -84,4 +84,4 @@ replace github.com/apernet/hysteria/core v1.3.5 => github.com/JimmyHuang454/hyst
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.4-0.20240427152557-66da2c2f72d0
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.15.4-0.20240428165634-56ed6b8f5a65
