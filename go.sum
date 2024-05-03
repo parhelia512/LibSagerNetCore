@@ -57,8 +57,8 @@ github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZm
 github.com/dgryski/go-metro v0.0.0-20200812162917-85c65e2d0165 h1:BS21ZUJ/B5X2UVUbczfmdWH7GapPWAhxcMsDnjJTU1E=
 github.com/dgryski/go-metro v0.0.0-20200812162917-85c65e2d0165/go.mod h1:c9O8+fpSOX1DM8cPNSkX/qsBWdkD4yd2dpciOWQjpBw=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
-github.com/dyhkwong/v2ray-core/v5 v5.16.1-0.20240503044542-c206a2b69566 h1:mMMg2c51hNu3h/m1rrY6uH3fxe4vqPF2yk12Ukz6b2M=
-github.com/dyhkwong/v2ray-core/v5 v5.16.1-0.20240503044542-c206a2b69566/go.mod h1:HcJZub81AJq1+KYB/ZNqD9pvKvgiC17RQilXpUgdRz0=
+github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240503141913-f0b3e60c7e14 h1:kyinqplqYVUAH45bZDEa8nbtPzjL7V3kbY5wNVj570c=
+github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240503141913-f0b3e60c7e14/go.mod h1:GU3SYCYtZmrqqWjThaY2wvATmIOgBAem/TQZJ6GxHQI=
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
 github.com/fsnotify/fsnotify v1.4.9/go.mod h1:znqG4EE+3YCdAaPaxE2ZRY/06pZUdp0tY4IgpuI1SZQ=
@@ -298,8 +298,8 @@ github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248 h1:C1JR/QGoOd2e
 github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248/go.mod h1:vy1vK6wD6j7xX6O6hXe621WabdtNkou2h7uRtTfRMyg=
 github.com/xtaci/smux v1.5.15 h1:6hMiXswcleXj5oNfcJc+DXS8Vj36XX2LaX98udog6Kc=
 github.com/xtaci/smux v1.5.15/go.mod h1:OMlQbT5vcgl2gb49mFkYo6SMf+zP3rcjcwQz7ZU7IGY=
-github.com/xtls/reality v0.0.0-20231112171332-de1173cf2b19 h1:capMfFYRgH9BCLd6A3Er/cH3A9Nz3CU2KwxwOQZIePI=
-github.com/xtls/reality v0.0.0-20231112171332-de1173cf2b19/go.mod h1:dm4y/1QwzjGaK17ofi0Vs6NpKAHegZky8qk6J2JJZAE=
+github.com/xtls/reality v0.0.0-20240429224917-ecc4401070cc h1:0Nj8T1n7F7+v4vRVroaJIvY6R0vNABLfPH+lzPHRJvI=
+github.com/xtls/reality v0.0.0-20240429224917-ecc4401070cc/go.mod h1:dm4y/1QwzjGaK17ofi0Vs6NpKAHegZky8qk6J2JJZAE=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

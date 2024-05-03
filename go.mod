@@ -6,7 +6,7 @@ require (
 	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
-	github.com/v2fly/v2ray-core/v5 v5.16.0 // replaced
+	github.com/v2fly/v2ray-core/v5 v5.16.1 // replaced
 	golang.org/x/mobile v0.0.0-20240404231514-09dbf07665ed
 	golang.org/x/net v0.24.0
 	golang.org/x/sys v0.19.0
@@ -61,7 +61,7 @@ require (
 	github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e // indirect
 	github.com/xiaokangwang/VLite v0.0.0-20231225174116-75fa4b06e9f2 // indirect
 	github.com/xtaci/smux v1.5.15 // indirect
-	github.com/xtls/reality v0.0.0-20231112171332-de1173cf2b19 // indirect
+	github.com/xtls/reality v0.0.0-20240429224917-ecc4401070cc // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto v0.22.0 // indirect
@@ -84,4 +84,4 @@ replace github.com/apernet/hysteria/core v1.3.5 => github.com/JimmyHuang454/hyst
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.1-0.20240503044542-c206a2b69566
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240503141913-f0b3e60c7e14
