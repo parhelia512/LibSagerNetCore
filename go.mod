@@ -7,19 +7,19 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
 	github.com/v2fly/v2ray-core/v5 v5.16.1 // replaced
-	golang.org/x/mobile v0.0.0-20240506190922-a1a533f289d3
-	golang.org/x/net v0.25.0
-	golang.org/x/sys v0.20.0
+	golang.org/x/mobile v0.0.0-20240604190613-2782386b8afd
+	golang.org/x/net v0.26.0
+	golang.org/x/sys v0.21.0
 	google.golang.org/protobuf v1.34.1
-	gvisor.dev/gvisor v0.0.0-20240312073010-bb26bfb010b8 // pin (wireguard-go is incompatible with commit 3c75945)
+	gvisor.dev/gvisor v0.0.0-20240312073010-bb26bfb010b8 // pin until wireguard-go updates
 )
 
 require (
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
-	github.com/apernet/hysteria/core v1.3.5 // indirect
-	github.com/apernet/quic-go v0.43.1-0.20240515053213-5e9e635fd9f0 // indirect
+	github.com/apernet/hysteria/core/v2 v2.4.5 // indirect
+	github.com/apernet/quic-go v0.44.1-0.20240520215222-bb2e53664023 // indirect
 	github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/database64128/tfo-go/v2 v2.2.0 // indirect
@@ -50,7 +50,7 @@ require (
 	github.com/quic-go/quic-go v0.44.0 // indirect
 	github.com/refraction-networking/utls v1.6.6 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
-	github.com/sagernet/sing v0.3.8 // indirect
+	github.com/sagernet/sing v0.4.0 // indirect
 	github.com/sagernet/sing-shadowsocks v0.2.6 // indirect
 	github.com/sagernet/sing-shadowsocks2 v0.2.0 // indirect
 	github.com/secure-io/siv-go v0.0.0-20180922214919-5ff40651e2c4 // indirect
@@ -64,12 +64,12 @@ require (
 	github.com/xtls/reality v0.0.0-20240429224917-ecc4401070cc // indirect
 	go.uber.org/mock v0.4.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
-	golang.org/x/crypto v0.23.0 // indirect
+	golang.org/x/crypto v0.24.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
-	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/text v0.15.0 // indirect
+	golang.org/x/mod v0.18.0 // indirect
+	golang.org/x/text v0.16.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.21.0 // indirect
+	golang.org/x/tools v0.22.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240318140521-94a12d6c2237 // indirect
@@ -80,8 +80,8 @@ require (
 
 replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
 
-replace github.com/apernet/hysteria/core v1.3.5 => github.com/JimmyHuang454/hysteria/core v0.0.0-20240518090457-07f5ae888199
+replace github.com/apernet/hysteria/core/v2 v2.4.5 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240605063419-3717f44ca98d
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240519165043-b26ed69e5071
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240605083836-3c2a51f3e3ed
