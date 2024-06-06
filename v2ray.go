@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	_ "unsafe"
 
 	"github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common/net"
@@ -114,11 +115,14 @@ func (instance *V2RayInstance) Close() error {
 	return nil
 }
 
+//go:linkname toContext github.com/v2fly/v2ray-core/v5.toContext
+func toContext(ctx context.Context, v *core.Instance) context.Context
+
 func (instance *V2RayInstance) dialContext(ctx context.Context, destination net.Destination) (net.Conn, error) {
 	if !instance.started {
 		return nil, os.ErrInvalid
 	}
-	ctx = core.WithContext(ctx, instance.core)
+	ctx = toContext(ctx, instance.core)
 	r, err := instance.dispatcher.Dispatch(ctx, destination)
 	if err != nil {
 		return nil, err
@@ -133,6 +137,6 @@ func (instance *V2RayInstance) dialContext(ctx context.Context, destination net.
 }
 
 func (instance *V2RayInstance) dialUDP(ctx context.Context) (net.PacketConn, error) {
-	ctx = core.WithContext(ctx, instance.core)
+	ctx = toContext(ctx, instance.core)
 	return udp.DialDispatcher(ctx, instance.dispatcher)
 }
