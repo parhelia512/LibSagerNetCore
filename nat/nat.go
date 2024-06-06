@@ -54,7 +54,7 @@ func New(dev int32, mtu int32, handler tun.Handler, ipv6Mode int32, errorHandler
 func (t *SystemTun) dispatchLoop() {
 	cache := buf.NewWithSize(int32(t.mtu))
 	defer cache.Release()
-	data := cache.Use()
+	data := cache.Extend(cache.Cap())
 
 	device := os.NewFile(uintptr(t.dev), "tun")
 
