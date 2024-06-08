@@ -111,7 +111,8 @@ func (t *SystemTun) processIPv6UDP(cache *buf.Buffer, ipHdr header.IPv6, hdr hea
 	cache.Advance(int32(headerLength + header.UDPMinimumSize))
 	go t.handler.NewPacket(source, destination, cache, func(bytes []byte, addr *v2rayNet.UDPAddr) (int, error) {
 		index := headerCache.Len()
-		newHeader := headerCache.ExtendCopy(headerCache.Bytes())
+		newHeader := headerCache.Extend(index)
+		copy(newHeader, headerCache.Bytes())
 		headerCache.Advance(index)
 
 		defer func() {

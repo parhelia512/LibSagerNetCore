@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/v2fly/v2ray-core/v5"
 	"github.com/v2fly/v2ray-core/v5/common"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	v2rayNet "github.com/v2fly/v2ray-core/v5/common/net"
@@ -261,7 +260,7 @@ func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNe
 		}
 	}
 
-	ctx := core.WithContext(context.Background(), t.v2ray.core)
+	ctx := toContext(context.Background(), t.v2ray.core)
 	ctx = session.ContextWithInbound(ctx, inbound)
 
 	if !isDns && (t.sniffing || t.fakedns) {
@@ -444,7 +443,7 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 
 	}
 
-	ctx := core.WithContext(context.Background(), t.v2ray.core)
+	ctx := toContext(context.Background(), t.v2ray.core)
 	ctx = session.ContextWithInbound(ctx, inbound)
 
 	if !isDns && (t.sniffing || t.fakedns) {
