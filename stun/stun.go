@@ -10,7 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 
-	"libcore/clash/transport/socks5"
+	"libcore/socks"
 )
 
 //go:generate go run ../errorgen
@@ -278,35 +278,28 @@ func connect(addrStr string, socksPort int) (*stunServerConn, error) {
 
 	logrus.Info(newError("connecting to STUN server: ", addrStr))
 
-	var mapTestConn net.PacketConn
+	var natConn net.PacketConn
 
-	socksConn, err := net.Dial("tcp", fmt.Sprint("127.0.0.1:", socksPort))
+	tcpConn, err := net.Dial("tcp", fmt.Sprint("127.0.0.1:", socksPort))
 	if err == nil {
-		handshake, err := socks5.ClientHandshake(socksConn, socks5.ParseAddr(addrStr), socks5.CmdUDPAssociate, nil)
-		if err != nil {
-			logrus.Warn(newError("failed to do udp associate handshake").Base(err))
-		}
-		udpConn, err := net.DialUDP("udp", nil, handshake.UDPAddr())
-		if err == nil {
-			mapTestConn = &socksPacketConn{udpConn, socksConn}
-		}
+		natConn = socks.NewSocksConn(tcpConn, addrStr)
 	}
 
-	if mapTestConn == nil {
-		mapTestConn, err = net.ListenUDP("udp", nil)
+	if natConn == nil {
+		natConn, err = net.ListenUDP("udp", nil)
 		if err != nil {
 			return nil, newError("failed to listen udp").Base(err)
 		}
 	}
 
-	logrus.Info(newError("local address: ", mapTestConn.LocalAddr()))
+	logrus.Info(newError("local address: ", natConn.LocalAddr()))
 	logrus.Info(newError("remote address: ", addr))
 
-	mChan := listen(mapTestConn)
+	mChan := listen(natConn)
 
 	return &stunServerConn{
-		conn:        mapTestConn,
-		LocalAddr:   mapTestConn.LocalAddr(),
+		conn:        natConn,
+		LocalAddr:   natConn.LocalAddr(),
 		RemoteAddr:  addr,
 		messageChan: mChan,
 	}, nil
