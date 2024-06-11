@@ -43,3 +43,8 @@ func StunTest(serverAddress string, socksPort int32) (*StunResult, error) {
 		NatFiltering: int32(natFiltering),
 	}, nil
 }
+
+func StunLegacyTest(serverAddress string, socksPort int32) (string, error) {
+	natType, err := stun.TestLegacy(serverAddress, int(socksPort))
+	return natType.String(), err
+}

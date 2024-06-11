@@ -282,7 +282,7 @@ func connect(addrStr string, socksPort int) (*stunServerConn, error) {
 
 	socksConn, err := net.Dial("tcp", fmt.Sprint("127.0.0.1:", socksPort))
 	if err == nil {
-		handshake, err := socks5.ClientHandshake(socksConn, socks5.ParseAddr(addrStr), socks5.CmdUDPAssociate, nil)
+		handshake, err := socks5.ClientHandshake(socksConn, socks5.ParseAddr("0.0.0.0:0"), socks5.CmdUDPAssociate, nil)
 		if err != nil {
 			logrus.Warn(newError("failed to do udp associate handshake").Base(err))
 		}

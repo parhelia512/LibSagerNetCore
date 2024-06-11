@@ -16,7 +16,8 @@ func (uc *socksPacketConn) WriteTo(b []byte, addr net.Addr) (n int, err error) {
 	if err != nil {
 		return
 	}
-	return uc.UDPConn.Write(packet)
+	_, err = uc.UDPConn.Write(packet)
+	return len(b), err
 }
 
 func (uc *socksPacketConn) ReadFrom(b []byte) (int, net.Addr, error) {
