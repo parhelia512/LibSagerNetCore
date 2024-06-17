@@ -26,9 +26,9 @@ type StunResult struct {
 	Error        string
 }
 
-func StunTest(serverAddress string, socksPort int32) *StunResult {
+func StunTest(serverAddress string, socksPort int32, dnsPort int32) *StunResult {
 	result := new(StunResult)
-	natBehavior, err := stun.Test(serverAddress, int(socksPort))
+	natBehavior, err := stun.Test(serverAddress, int(socksPort), int(dnsPort))
 	if err != nil {
 		result.Error = err.Error()
 	}
@@ -45,15 +45,17 @@ type StunLegacyResult struct {
 	Error   string
 }
 
-func StunLegacyTest(serverAddress string, socksPort int32) *StunLegacyResult {
+func StunLegacyTest(serverAddress string, socksPort int32, dnsPort int32) *StunLegacyResult {
 	result := new(StunLegacyResult)
-	natType, host, err := stun.TestLegacy(serverAddress, int(socksPort))
+	natType, host, err := stun.TestLegacy(serverAddress, int(socksPort), int(dnsPort))
 	if err != nil {
 		result.Error = err.Error()
 	}
 	if host != nil {
 		result.Host = host.String()
 	}
-	result.NatType = natType.String()
+	if natType != nil {
+		result.NatType = natType.String()
+	}
 	return result
 }

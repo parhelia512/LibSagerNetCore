@@ -289,6 +289,8 @@ github.com/v2fly/BrowserBridge v0.0.0-20210430233438-0570fc1d7d08 h1:4Yh46CVE3k/
 github.com/v2fly/BrowserBridge v0.0.0-20210430233438-0570fc1d7d08/go.mod h1:KAuQNm+LWQCOFqdBcUgihPzRpVXRKzGbTNhfEfRZ4wY=
 github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e h1:5QefA066A1tF8gHIiADmOVOV5LS43gt3ONnlEl3xkwI=
 github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e/go.mod h1:5t19P9LBIrNamL6AcMQOncg/r10y3Pc01AbHeMhwlpU=
+github.com/wzshiming/socks5 v0.4.3 h1:kVEvp9d7MzRcTh1W2BerPtcJGTjsP22Ar3xL129mM6E=
+github.com/wzshiming/socks5 v0.4.3/go.mod h1:BvCAqlzocQN5xwLjBZDBbvWlrx8sCYSSbHEOf2wZgT0=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xiaokangwang/VLite v0.0.0-20231225174116-75fa4b06e9f2 h1:JwiRCsLsmnNXoKXW0KheE6ZDv+j/ted1dKbd8FABzhY=
 github.com/xiaokangwang/VLite v0.0.0-20231225174116-75fa4b06e9f2/go.mod h1:PChnkENmpgFKJRVZ6mX1tFBSZMqXrjbtmc48+fANnwo=

@@ -1,86 +1,96 @@
 package stun
 
 import (
-	"fmt"
+	"context"
 	"net"
+	"strconv"
 
 	"github.com/ccding/go-stun/stun"
-	"github.com/sirupsen/logrus"
-
-	"libcore/clash/transport/socks5"
+	"github.com/wzshiming/socks5"
 )
 
-//go:generate go run ../errorgen
-
-func connect(addrStr string, socksPort int) (net.PacketConn, error) {
-	addr, err := net.ResolveUDPAddr("udp", addrStr)
+func setupPacketConn(socksPort int) (net.PacketConn, bool, error) {
+	dialer, err := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(socksPort))
 	if err != nil {
-		return nil, newError("failed to resolve server address ", addrStr).Base(err)
+		return nil, false, err
 	}
-	logrus.Info(newError("connecting to STUN server: ", addrStr))
 	var packetConn net.PacketConn
-	socksConn, err := net.Dial("tcp", fmt.Sprint("127.0.0.1:", socksPort))
+	useSOCKS5 := false
+	conn, err := dialer.Dial("udp", "0.0.0.0:0")
 	if err == nil {
-		handshake, err := socks5.ClientHandshake(socksConn, socks5.ParseAddr("0.0.0.0:0"), socks5.CmdUDPAssociate, nil)
-		if err != nil {
-			logrus.Warn(newError("failed to do udp associate handshake").Base(err))
-		}
-		udpConn, err := net.DialUDP("udp", nil, handshake.UDPAddr())
-		if err == nil {
-			packetConn = &socksPacketConn{udpConn, socksConn}
-		}
-	}
-
-	if packetConn == nil {
+		packetConn = conn.(net.PacketConn)
+		useSOCKS5 = true
+	} else {
 		packetConn, err = net.ListenUDP("udp", nil)
-		if err != nil {
-			return nil, newError("failed to listen udp").Base(err)
-		}
 	}
-
-	logrus.Info(newError("local address: ", packetConn.LocalAddr()))
-	logrus.Info(newError("remote address: ", addr))
-
-	return packetConn, nil
+	if err != nil {
+		return nil, false, err
+	}
+	return packetConn, useSOCKS5, nil
 }
 
-func newConn(addrStr string, socksPort int) (net.PacketConn, error) {
-	packetConn, err := connect(addrStr, socksPort)
-	if err != nil {
-		e := newError("error creating STUN connection").Base(err)
-		logrus.Warn(e)
-		return nil, e
+func resolveDNS(host string, dnsPort int) (net.IP, error) {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			dialer := net.Dialer{}
+			return dialer.DialContext(ctx, network, "127.0.0.1:"+strconv.Itoa(dnsPort))
+		},
 	}
-	return packetConn, nil
+	ips, err := resolver.LookupIP(context.Background(), "ip", host)
+	if err != nil {
+		return nil, err
+	}
+	return ips[0], nil
 }
 
 // RFC 5780
-func Test(addrStr string, socksPort int) (*stun.NATBehavior, error) {
+func Test(addrStr string, socksPort int, dnsPort int) (*stun.NATBehavior, error) {
 	if addrStr == "" {
 		addrStr = "stun.syncthing.net:3478"
 	}
-	if packetConn, err := newConn(addrStr, socksPort); err == nil {
-		client := stun.NewClientWithConnection(packetConn)
-		client.SetServerAddr(addrStr)
-		return client.BehaviorTest()
-	} else {
-		return &stun.NATBehavior{
-			MappingType:   stun.BehaviorTypeUnknown,
-			FilteringType: stun.BehaviorTypeUnknown,
-		}, err
+	host, port, err := net.SplitHostPort(addrStr)
+	if err != nil {
+		return nil, err
 	}
+	packetConn, useSOCKS5, err := setupPacketConn(socksPort)
+	if err != nil {
+		return nil, err
+	}
+	if useSOCKS5 && net.ParseIP(host) == nil {
+		ip, err := resolveDNS(host, dnsPort)
+		if err != nil {
+			return nil, err
+		}
+		addrStr = net.JoinHostPort(ip.String(), port)
+	}
+	client := stun.NewClientWithConnection(packetConn)
+	client.SetServerAddr(addrStr)
+	return client.BehaviorTest()
 }
 
 // RFC 3489
-func TestLegacy(addrStr string, socksPort int) (stun.NATType, *stun.Host, error) {
+func TestLegacy(addrStr string, socksPort int, dnsPort int) (*stun.NATType, *stun.Host, error) {
 	if addrStr == "" {
 		addrStr = "stun.syncthing.net:3478"
 	}
-	if packetConn, err := newConn(addrStr, socksPort); err == nil {
-		client := stun.NewClientWithConnection(packetConn)
-		client.SetServerAddr(addrStr)
-		return client.Discover()
-	} else {
-		return stun.NATError, nil, err
+	host, port, err := net.SplitHostPort(addrStr)
+	if err != nil {
+		return nil, nil, err
 	}
+	packetConn, useSOCKS5, err := setupPacketConn(socksPort)
+	if err != nil {
+		return nil, nil, err
+	}
+	if useSOCKS5 && net.ParseIP(host) == nil {
+		ip, err := resolveDNS(host, dnsPort)
+		if err != nil {
+			return nil, nil, err
+		}
+		addrStr = net.JoinHostPort(ip.String(), port)
+	}
+	client := stun.NewClientWithConnection(packetConn)
+	client.SetServerAddr(addrStr)
+	natType, addr, err := client.Discover()
+	return &natType, addr, err
 }

@@ -7,6 +7,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
 	github.com/v2fly/v2ray-core/v5 v5.16.1 // replaced
+	github.com/wzshiming/socks5 v0.4.3
 	golang.org/x/mobile v0.0.0-20240604190613-2782386b8afd
 	golang.org/x/net v0.26.0
 	golang.org/x/sys v0.21.0
