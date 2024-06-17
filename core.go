@@ -20,31 +20,40 @@ func IcmpPing(address string, timeout int32) (int32, error) {
 	return icmpPing(address, timeout)
 }
 
-const (
-	StunNoResult int32 = iota
-	StunEndpointIndependentNoNAT
-	StunEndpointIndependent
-	StunAddressDependent
-	StunAddressAndPortDependent
-)
-
 type StunResult struct {
-	NatMapping   int32
-	NatFiltering int32
+	NatMapping   string
+	NatFiltering string
+	Error        string
 }
 
-func StunTest(serverAddress string, socksPort int32) (*StunResult, error) {
-	natMapping, natFiltering, err := stun.Test(serverAddress, int(socksPort))
+func StunTest(serverAddress string, socksPort int32) *StunResult {
+	result := new(StunResult)
+	natBehavior, err := stun.Test(serverAddress, int(socksPort))
 	if err != nil {
-		return nil, err
+		result.Error = err.Error()
 	}
-	return &StunResult{
-		NatMapping:   int32(natMapping),
-		NatFiltering: int32(natFiltering),
-	}, nil
+	if natBehavior != nil {
+		result.NatMapping = natBehavior.MappingType.String()
+		result.NatFiltering = natBehavior.FilteringType.String()
+	}
+	return result
 }
 
-func StunLegacyTest(serverAddress string, socksPort int32) (string, error) {
-	natType, err := stun.TestLegacy(serverAddress, int(socksPort))
-	return natType.String(), err
+type StunLegacyResult struct {
+	NatType string
+	Host    string
+	Error   string
+}
+
+func StunLegacyTest(serverAddress string, socksPort int32) *StunLegacyResult {
+	result := new(StunLegacyResult)
+	natType, host, err := stun.TestLegacy(serverAddress, int(socksPort))
+	if err != nil {
+		result.Error = err.Error()
+	}
+	if host != nil {
+		result.Host = host.String()
+	}
+	result.NatType = natType.String()
+	return result
 }

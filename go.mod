@@ -4,7 +4,6 @@ go 1.22.0
 
 require (
 	github.com/ccding/go-stun v0.1.4
-	github.com/pion/stun/v2 v2.0.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.11
 	github.com/v2fly/v2ray-core/v5 v5.16.1 // replaced
