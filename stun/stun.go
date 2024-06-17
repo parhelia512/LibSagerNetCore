@@ -33,7 +33,7 @@ func resolveDNS(host string, dnsPort int) (net.IP, error) {
 	resolver := &net.Resolver{
 		PreferGo: true,
 		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			dialer := net.Dialer{}
+			dialer := new(net.Dialer)
 			return dialer.DialContext(ctx, network, "127.0.0.1:"+strconv.Itoa(dnsPort))
 		},
 	}

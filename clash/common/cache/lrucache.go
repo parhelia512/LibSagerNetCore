@@ -14,13 +14,6 @@ type Option func(*LruCache)
 // EvictCallback is used to get a callback when a cache entry is evicted
 type EvictCallback = func(key any, value any)
 
-// WithEvict set the evict callback
-func WithEvict(cb EvictCallback) Option {
-	return func(l *LruCache) {
-		l.onEvict = cb
-	}
-}
-
 // WithUpdateAgeOnGet update expires when Get element
 func WithUpdateAgeOnGet() Option {
 	return func(l *LruCache) {
@@ -32,21 +25,6 @@ func WithUpdateAgeOnGet() Option {
 func WithAge(maxAge int64) Option {
 	return func(l *LruCache) {
 		l.maxAge = maxAge
-	}
-}
-
-// WithSize defined max length of LruCache
-func WithSize(maxSize int) Option {
-	return func(l *LruCache) {
-		l.maxSize = maxSize
-	}
-}
-
-// WithStale decide whether Stale return is enabled.
-// If this feature is enabled, element will not get Evicted according to `WithAge`.
-func WithStale(stale bool) Option {
-	return func(l *LruCache) {
-		l.staleReturn = stale
 	}
 }
 
@@ -90,28 +68,6 @@ func (c *LruCache) Get(key any) (any, bool) {
 	return value, true
 }
 
-// GetWithExpire returns the any representation of a cached response,
-// a time.Time Give expected expires,
-// and a bool set to true if the key was found.
-// This method will NOT check the maxAge of element and will NOT update the expires.
-func (c *LruCache) GetWithExpire(key any) (any, time.Time, bool) {
-	entry := c.get(key)
-	if entry == nil {
-		return nil, time.Time{}, false
-	}
-
-	return entry.value, time.Unix(entry.expires, 0), true
-}
-
-// Exist returns if key exist in cache but not put item to the head of linked list
-func (c *LruCache) Exist(key any) bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	_, ok := c.cache[key]
-	return ok
-}
-
 // Set stores the any representation of a response for a given key.
 func (c *LruCache) Set(key any, value any) {
 	expires := int64(0)
@@ -144,23 +100,6 @@ func (c *LruCache) SetWithExpire(key any, value any, expires time.Time) {
 	}
 
 	c.maybeDeleteOldest()
-}
-
-// CloneTo clone and overwrite elements to another LruCache
-func (c *LruCache) CloneTo(n *LruCache) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	n.mu.Lock()
-	defer n.mu.Unlock()
-
-	n.lru = list.New()
-	n.cache = make(map[any]*list.Element)
-
-	for e := c.lru.Front(); e != nil; e = e.Next() {
-		elm := e.Value.(*entry)
-		n.cache[elm.key] = n.lru.PushBack(elm)
-	}
 }
 
 func (c *LruCache) get(key any) *entry {

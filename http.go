@@ -19,8 +19,7 @@ import (
 	"sync"
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
-
-	"libcore/clash/transport/socks5"
+	"github.com/wzshiming/socks5"
 )
 
 type HTTPClient interface {
@@ -104,13 +103,10 @@ func (c *httpClient) PinnedSHA256(sumHex string) {
 
 func (c *httpClient) TrySocks5(port int32) {
 	dialer := new(net.Dialer)
+	socks5Dialer, _ := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(int(port)))
 	c.transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		for {
-			socksConn, err := dialer.DialContext(ctx, "tcp", "127.0.0.1:"+strconv.Itoa(int(port)))
-			if err != nil {
-				break
-			}
-			_, err = socks5.ClientHandshake(socksConn, socks5.ParseAddr(addr), socks5.CmdConnect, nil)
+			socksConn, err := socks5Dialer.DialContext(ctx, "tcp", addr)
 			if err != nil {
 				break
 			}
