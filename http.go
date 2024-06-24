@@ -47,6 +47,7 @@ type HTTPRequest interface {
 type HTTPResponse interface {
 	GetContent() ([]byte, error)
 	GetContentString() (string, error)
+	GetHeader(key string) string
 	WriteTo(path string) error
 }
 
@@ -218,6 +219,10 @@ func (h *httpResponse) GetContentString() (string, error) {
 		return "", err
 	}
 	return string(content), nil
+}
+
+func (r *httpResponse) GetHeader(key string) string {
+	return r.Response.Header.Get(key)
 }
 
 func (h *httpResponse) WriteTo(path string) error {
