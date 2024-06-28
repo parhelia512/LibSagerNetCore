@@ -32,7 +32,7 @@ func (t *SystemTun) processIPv4UDP(cache *buf.Buffer, ipHdr header.IPv4, hdr hea
 	hdr.SetDestinationPort(sourcePort)
 
 	headerLength := ipHdr.HeaderLength()
-	headerCache := buf.New()
+	headerCache := buf.NewWithSize(int32(t.mtu))
 	headerCache.Write(ipHdr[:headerLength+header.UDPMinimumSize])
 
 	cache.Advance(int32(headerLength + header.UDPMinimumSize))
@@ -105,7 +105,7 @@ func (t *SystemTun) processIPv6UDP(cache *buf.Buffer, ipHdr header.IPv6, hdr hea
 	hdr.SetDestinationPort(sourcePort)
 
 	headerLength := uint16(len(ipHdr)) - ipHdr.PayloadLength()
-	headerCache := buf.New()
+	headerCache := buf.NewWithSize(int32(t.mtu))
 	headerCache.Write(ipHdr[:headerLength+header.UDPMinimumSize])
 
 	cache.Advance(int32(headerLength + header.UDPMinimumSize))

@@ -67,8 +67,8 @@ func (t *SystemTun) dispatchLoop() {
 		cache.Resize(0, int32(n))
 		packet := data[:n]
 		if t.deliverPacket(cache, packet) {
-			cache = buf.New()
-			data = cache.Extend(buf.Size)
+			cache = buf.NewWithSize(int32(t.mtu))
+			data = cache.Extend(cache.Cap())
 		}
 	}
 }
