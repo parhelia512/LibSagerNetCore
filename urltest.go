@@ -3,7 +3,6 @@ package libcore
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"time"
 
@@ -27,7 +26,6 @@ func UrlTest(instance *V2RayInstance, inbound string, link string, timeout int32
 		},
 	}
 	req, err := http.NewRequestWithContext(context.Background(), "GET", link, nil)
-	req.Header.Set("User-Agent", fmt.Sprintf("curl/7.%d.%d", rand.Int()%54, rand.Int()%2))
 	if err != nil {
 		return 0, err
 	}
