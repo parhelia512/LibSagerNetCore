@@ -18,7 +18,7 @@ func setupPacketConn(socksPort int) (net.PacketConn, bool, error) {
 	useSOCKS5 := false
 	conn, err := dialer.Dial("udp", "0.0.0.0:0")
 	if err == nil {
-		packetConn = conn.(net.PacketConn)
+		packetConn = conn.(*socks5.UDPConn)
 		useSOCKS5 = true
 	} else {
 		packetConn, err = net.ListenUDP("udp", nil)
