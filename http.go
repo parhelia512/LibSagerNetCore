@@ -140,7 +140,10 @@ type httpRequest struct {
 
 func (r *httpRequest) SetURL(link string) (err error) {
 	r.request.URL, err = url.Parse(link)
-	if r.request.URL.User != nil {
+	if err != nil {
+		return err
+	}
+	if r.request.URL != nil && r.request.URL.User != nil {
 		user := r.request.URL.User.Username()
 		password, _ := r.request.URL.User.Password()
 		r.request.SetBasicAuth(user, password)
