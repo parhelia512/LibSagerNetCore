@@ -9,7 +9,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/v2fly/v2ray-core/v5 v5.16.1 // replaced
 	github.com/wzshiming/socks5 v0.5.1
-	golang.org/x/mobile v0.0.0-20240707233753-b765e5d5218f
+	golang.org/x/mobile v0.0.0-20240716161057-1ad2df20a8b6
 	golang.org/x/net v0.27.0
 	golang.org/x/sys v0.22.0
 	gvisor.dev/gvisor v0.0.0-20240312073010-bb26bfb010b8 // pin until wireguard-go updates
@@ -52,11 +52,11 @@ require (
 	github.com/quic-go/quic-go v0.45.1 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
 	github.com/riobard/go-bloom v0.0.0-20200614022211-cdc8013cb5b3 // indirect
-	github.com/sagernet/sing v0.4.1 // indirect
+	github.com/sagernet/sing v0.4.2 // indirect
 	github.com/sagernet/sing-shadowsocks v0.2.7 // indirect
 	github.com/sagernet/sing-shadowsocks2 v0.2.0 // indirect
 	github.com/secure-io/siv-go v0.0.0-20180922214919-5ff40651e2c4 // indirect
-	github.com/seiflotfy/cuckoofilter v0.0.0-20220411075957-e3b120b3f5fb // indirect
+	github.com/seiflotfy/cuckoofilter v0.0.0-20240715131351-a2f2c23f1771 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/v2fly/BrowserBridge v0.0.0-20210430233438-0570fc1d7d08 // indirect
@@ -88,4 +88,4 @@ replace github.com/apernet/hysteria/core/v2 v2.5.0 => github.com/JimmyHuang454/h
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240715164806-624a6f19fb38
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240720072133-c6240c1dd8c1
