@@ -6,10 +6,10 @@ import (
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"golang.org/x/sys/unix"
 	"gvisor.dev/gvisor/pkg/buffer"
+	"gvisor.dev/gvisor/pkg/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
 	"gvisor.dev/gvisor/pkg/tcpip/header/parse"
-	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
 	"libcore/tun"
 )
@@ -79,11 +79,17 @@ func (t *SystemTun) writeRawPacket(pkt *stack.PacketBuffer) tcpip.Error {
 	for i, v := range views {
 		iovecs[i] = rawfile.IovecFromBytes(v)
 	}
-	return rawfile.NonBlockingWriteIovec(t.dev, iovecs)
+	if errno := rawfile.NonBlockingWriteIovec(t.dev, iovecs); errno != 0 {
+		return tcpip.TranslateErrno(errno)
+	}
+	return nil
 }
 
 func (t *SystemTun) writeBuffer(bytes []byte) tcpip.Error {
-	return rawfile.NonBlockingWrite(t.dev, bytes)
+	if errno := rawfile.NonBlockingWrite(t.dev, bytes); errno != 0 {
+		return tcpip.TranslateErrno(errno)
+	}
+	return nil
 }
 
 func (t *SystemTun) deliverPacket(cache *buf.Buffer, packet []byte) bool {

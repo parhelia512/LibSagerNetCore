@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/sys/unix"
 	"gvisor.dev/gvisor/pkg/buffer"
+	"gvisor.dev/gvisor/pkg/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
-	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
 )
 
@@ -132,9 +132,9 @@ func newReadVDispatcher(fd int, e *rwEndpoint) (*readVDispatcher, error) {
 
 // dispatch reads one packet from the file descriptor and dispatches it.
 func (d *readVDispatcher) dispatch() (bool, tcpip.Error) {
-	n, err := rawfile.BlockingReadvUntilStopped(d.efd, d.fd, d.buf.nextIovecs())
-	if n <= 0 || err != nil {
-		return false, err
+	n, errno := rawfile.BlockingReadvUntilStopped(d.efd, d.fd, d.buf.nextIovecs())
+	if n <= 0 || errno != 0 {
+		return false, tcpip.TranslateErrno(errno)
 	}
 
 	pkt := stack.NewPacketBuffer(stack.PacketBufferOptions{

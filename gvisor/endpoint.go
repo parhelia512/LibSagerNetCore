@@ -5,9 +5,9 @@ import (
 
 	"golang.org/x/sys/unix"
 	"gvisor.dev/gvisor/pkg/buffer"
+	"gvisor.dev/gvisor/pkg/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip"
 	"gvisor.dev/gvisor/pkg/tcpip/header"
-	"gvisor.dev/gvisor/pkg/tcpip/link/rawfile"
 	"gvisor.dev/gvisor/pkg/tcpip/stack"
 )
 
@@ -23,6 +23,8 @@ type rwEndpoint struct {
 
 	inbound    *readVDispatcher
 	dispatcher stack.NetworkDispatcher
+
+	mu sync.RWMutex `state:"nosave"`
 }
 
 func newRwEndpoint(dev int32, mtu int32) (*rwEndpoint, error) {
@@ -43,7 +45,10 @@ func (e *rwEndpoint) InjectInbound(networkProtocol tcpip.NetworkProtocolNumber, 
 }
 
 func (e *rwEndpoint) InjectOutbound(dest tcpip.Address, packet *buffer.View) tcpip.Error {
-	return rawfile.NonBlockingWrite(e.fd, packet.AsSlice())
+	if errno := rawfile.NonBlockingWrite(e.fd, packet.AsSlice()); errno != 0 {
+		return tcpip.TranslateErrno(errno)
+	}
+	return nil
 }
 
 // Attach launches the goroutine that reads packets from io.ReadWriter and
@@ -92,9 +97,8 @@ func (e *rwEndpoint) WritePackets(pkts stack.PacketBufferList) (int, tcpip.Error
 	for _, pkt := range pkts.AsSlice() {
 		batch = rawfile.AppendIovecFromBytes(batch, pkt.ToView().AsSlice(), rawfile.MaxIovs)
 	}
-	err := rawfile.NonBlockingWriteIovec(e.fd, batch)
-	if err != nil {
-		return 0, err
+	if errno := rawfile.NonBlockingWriteIovec(e.fd, batch); errno != 0 {
+		return 0, tcpip.TranslateErrno(errno)
 	}
 	return pkts.Len(), nil
 }
@@ -134,7 +138,23 @@ func (*rwEndpoint) ParseHeader(*stack.PacketBuffer) bool {
 	return true
 }
 
+// SetLinkAddress implements stack.LinkEndpoint.SetLinkAddress.
+func (e *rwEndpoint) SetLinkAddress(_ tcpip.LinkAddress) {}
+
+// SetMTU implements stack.LinkEndpoint.SetMTU.
+func (e *rwEndpoint) SetMTU(mtu uint32) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.mtu = mtu
+}
+
+// SetOnCloseAction implements stack.LinkEndpoint.
+func (*rwEndpoint) SetOnCloseAction(func()) {}
+
 // Wait implements stack.LinkEndpoint.Wait.
 func (e *rwEndpoint) Wait() {
 	e.wg.Wait()
 }
+
+// Close implements stack.LinkEndpoint.Close.
+func (*rwEndpoint) Close() {}
