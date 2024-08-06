@@ -27,9 +27,6 @@ func updateRootCACerts() {
 	logrus.Info("updated root ca certificate list")
 }
 
-//go:linkname initSystemRoots crypto/x509.initSystemRoots
-func initSystemRoots()
-
 var disableSystem bool
 
 func UpdateSystemRoots(useSystem bool) {
@@ -39,7 +36,7 @@ func UpdateSystemRoots(useSystem bool) {
 	disableSystem = !disableSystem
 
 	if useSystem {
-		initSystemRoots()
+		systemRoots, _ = x509.SystemCertPool()
 		logrus.Info("reset systemRoots")
 	} else {
 		updateRootCACerts()
