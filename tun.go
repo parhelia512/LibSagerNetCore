@@ -129,82 +129,60 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 		config.Protector = noopProtectorInstance
 	}
 
-	dc := config.V2Ray.dnsClient
 	if config.FakeDNS {
-		_, _ = dns.LookupIPWithOption(dc, "placeholder", dns.IPOption{
+		_, _ = dns.LookupIPWithOption(config.V2Ray.dnsClient, "placeholder", dns.IPOption{
 			IPv4Enable: true,
 			IPv6Enable: true,
 			FakeEnable: true,
 		})
 	}
+	lookupFunc := func(network, host string) ([]net.IP, error) {
+		response, err := config.LocalResolver.LookupIP(network, host)
+		if err != nil {
+			errStr := err.Error()
+			if strings.HasPrefix(errStr, "rcode") {
+				r, _ := strconv.Atoi(strings.Split(errStr, " ")[1])
+				return nil, dns.RCodeError(r)
+			}
+			return nil, err
+		}
+		if response == "" {
+			return nil, dns.ErrEmptyResponse
+		}
+		addrs := Filter(strings.Split(response, ","), func(it string) bool {
+			return len(strings.TrimSpace(it)) >= 0
+		})
+		ips := make([]net.IP, len(addrs))
+		for i, addr := range addrs {
+			ip := net.ParseIP(addr)
+			if ip.To4() != nil {
+				ip = ip.To4()
+			}
+			ips[i] = ip
+		}
+		if len(ips) == 0 {
+			return nil, dns.ErrEmptyResponse
+		}
+		return ips, nil
+	}
 	internet.UseAlternativeSystemDialer(&protectedDialer{
 		protector: config.Protector,
 		resolver: func(domain string) ([]net.IP, error) {
-			return dns.LookupIPWithOption(dc, domain, dns.IPOption{
-				IPv4Enable: true,
-				IPv6Enable: true,
-				FakeEnable: false,
-			})
+			return lookupFunc("ip", domain)
 		},
 	})
 
 	if !config.Protect {
 		localdns.SetLookupFunc(nil)
 	} else {
-		localdns.SetLookupFunc(func(network, host string) ([]net.IP, error) {
-			response, err := config.LocalResolver.LookupIP(network, host)
-			if err != nil {
-				errStr := err.Error()
-				if strings.HasPrefix(errStr, "rcode") {
-					r, _ := strconv.Atoi(strings.Split(errStr, " ")[1])
-					return nil, dns.RCodeError(r)
-				}
-				return nil, err
-			}
-			if response == "" {
-				return nil, dns.ErrEmptyResponse
-			}
-			addrs := Filter(strings.Split(response, ","), func(it string) bool {
-				return len(strings.TrimSpace(it)) >= 0
-			})
-			ips := make([]net.IP, len(addrs))
-			for i, addr := range addrs {
-				ip := net.ParseIP(addr)
-				if ip.To4() != nil {
-					ip = ip.To4()
-				}
-				ips[i] = ip
-			}
-			if len(ips) == 0 {
-				return nil, dns.ErrEmptyResponse
-			}
-
-			return ips, nil
-		})
+		localdns.SetLookupFunc(lookupFunc)
 	}
-
-	internet.UseAlternativeSystemDNSDialer(&protectedDialer{
-		protector: config.Protector,
-		resolver: func(domain string) ([]net.IP, error) {
-			return localdns.New().LookupIP(domain)
-		},
-	})
 
 	return t, nil
 }
 
-func (t *Tun2ray) ResetNetwork() {
-	t.connectionsLock.Lock()
-	for item := t.connections.Front(); item != nil; item = item.Next() {
-		common.Close(item.Value)
-	}
-	t.connections.Init()
-	t.connectionsLock.Unlock()
-}
-
 func (t *Tun2ray) Close() {
 	internet.UseAlternativeSystemDialer(nil)
-	internet.UseAlternativeSystemDNSDialer(nil)
 	localdns.SetLookupFunc(nil)
 	comm.CloseIgnore(t.dev)
 	t.connectionsLock.Lock()

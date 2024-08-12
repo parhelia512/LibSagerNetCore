@@ -11,8 +11,8 @@ require (
 	github.com/wzshiming/socks5 v0.5.1
 	golang.org/x/mobile v0.0.0-20240806205939-81131f6468ab
 	golang.org/x/net v0.28.0
-	golang.org/x/sys v0.23.0
-	gvisor.dev/gvisor v0.0.0-20240726212243-a2b0498dbe7d
+	golang.org/x/sys v0.24.0
+	gvisor.dev/gvisor v0.0.0-20240807080502-4f6f8f8e3eda
 )
 
 require (
@@ -88,4 +88,4 @@ replace github.com/apernet/hysteria/core/v2 v2.5.0 => github.com/JimmyHuang454/h
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240807051033-c79fa2acf9f3
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240812111359-e6c6923106a9
