@@ -19,11 +19,10 @@ require (
 	github.com/adrg/xdg v0.5.0 // indirect
 	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
-	github.com/apernet/hysteria/core/v2 v2.5.0 // indirect
-	github.com/apernet/quic-go v0.45.3-0.20240803200022-e3824dfb4b89 // indirect
+	github.com/apernet/hysteria/core/v2 v2.5.1 // indirect
+	github.com/apernet/quic-go v0.46.1-0.20240816230517-268ed2476167 // indirect
 	github.com/boljen/go-bitmap v0.0.0-20151001105940-23cd2fb0ce7d // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
-	github.com/database64128/tfo-go/v2 v2.2.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-metro v0.0.0-20200812162917-85c65e2d0165 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
@@ -84,8 +83,8 @@ require (
 
 replace github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
 
-replace github.com/apernet/hysteria/core/v2 v2.5.0 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
+replace github.com/apernet/hysteria/core/v2 v2.5.1 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240813055011-12628d30e1f3
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.16.2-0.20240817121645-7f7384fa9e46
