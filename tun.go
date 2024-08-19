@@ -168,7 +168,31 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 	internet.UseAlternativeSystemDialer(&protectedDialer{
 		protector: config.Protector,
 		resolver: func(domain string) ([]net.IP, error) {
-			return lookupFunc("ip", domain)
+			network := "ip"
+			switch config.IPv6Mode {
+			case comm.IPv6Disable:
+				network = "ip4"
+			case comm.IPv6Only:
+				network = "ip6"
+			}
+			ips, err := lookupFunc(network, domain)
+			if err != nil || len(ips) == 0 || config.IPv6Mode == comm.IPv6Disable || config.IPv6Mode == comm.IPv6Only {
+				return ips, err
+			}
+			ipv4 := make([]net.IP, 0)
+			ipv6 := make([]net.IP, 0)
+			for _, ip := range ips {
+				if ip.To4() != nil {
+					ipv4 = append(ipv4, ip.To4())
+				} else {
+					ipv6 = append(ipv6, ip)
+				}
+			}
+			if config.IPv6Mode == comm.IPv6Prefer {
+				return append(ipv6, ipv4...), err
+			}
+			// config.IPv6Mode == comm.IPv6Enable
+			return append(ipv4, ipv6...), err
 		},
 	})
 
