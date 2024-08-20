@@ -53,6 +53,8 @@ type Tun2ray struct {
 
 	connectionsLock sync.Mutex
 	connections     list.List
+
+	protectCloser io.Closer
 }
 
 type TunConfig struct {
@@ -75,6 +77,7 @@ type TunConfig struct {
 	PCap                bool
 	ErrorHandler        ErrorHandler
 	LocalResolver       LocalResolver
+	ProtectPath         string
 }
 
 type ErrorHandler interface {
@@ -127,6 +130,10 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 
 	if !config.Protect {
 		config.Protector = noopProtectorInstance
+	}
+
+	if len(config.ProtectPath) > 0 {
+		t.protectCloser = ServerProtect(config.ProtectPath, config.Protector)
 	}
 
 	if config.FakeDNS {
@@ -214,6 +221,9 @@ func (t *Tun2ray) Close() {
 		common.Close(item.Value)
 	}
 	t.connectionsLock.Unlock()
+	if t.protectCloser != nil {
+		_ = t.protectCloser.Close()
+	}
 }
 
 func (t *Tun2ray) NewConnection(source v2rayNet.Destination, destination v2rayNet.Destination, conn net.Conn) {
