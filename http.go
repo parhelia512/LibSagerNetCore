@@ -27,6 +27,7 @@ type HTTPClient interface {
 	PinnedTLS12()
 	PinnedSHA256(sumHex string)
 	TrySocks5(port int32)
+	UseSocks5(port int32)
 	KeepAlive()
 	NewRequest() HTTPRequest
 	Close()
@@ -100,6 +101,7 @@ func (c *httpClient) PinnedSHA256(sumHex string) {
 	}
 }
 
+// not used
 func (c *httpClient) TrySocks5(port int32) {
 	dialer := new(net.Dialer)
 	socks5Dialer, _ := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(int(port)))
@@ -111,6 +113,13 @@ func (c *httpClient) TrySocks5(port int32) {
 			}
 			return socksConn, err
 		}
+		return dialer.DialContext(ctx, network, addr)
+	}
+}
+
+func (c *httpClient) UseSocks5(port int32) {
+	c.transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		dialer, _ := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(int(port)))
 		return dialer.DialContext(ctx, network, addr)
 	}
 }

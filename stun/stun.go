@@ -9,24 +9,17 @@ import (
 	"github.com/wzshiming/socks5"
 )
 
-func setupPacketConn(socksPort int) (net.PacketConn, bool, error) {
-	dialer, err := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(socksPort))
-	if err != nil {
-		return nil, false, err
-	}
-	var packetConn net.PacketConn
-	useSOCKS5 := false
-	conn, err := dialer.Dial("udp", "0.0.0.0:0")
-	if err == nil {
-		packetConn = conn.(*socks5.UDPConn)
-		useSOCKS5 = true
+func setupPacketConn(useSOCKS5 bool, socksPort int) (net.PacketConn, error) {
+	if useSOCKS5 {
+		dialer, _ := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(socksPort))
+		conn, err := dialer.Dial("udp", "0.0.0.0:0")
+		if err != nil {
+			return nil, err
+		}
+		return conn.(*socks5.UDPConn), nil
 	} else {
-		packetConn, err = net.ListenUDP("udp", nil)
+		return net.ListenUDP("udp", nil)
 	}
-	if err != nil {
-		return nil, false, err
-	}
-	return packetConn, useSOCKS5, nil
 }
 
 func resolveDNS(host string, dnsPort int) (net.IP, error) {
@@ -45,7 +38,7 @@ func resolveDNS(host string, dnsPort int) (net.IP, error) {
 }
 
 // RFC 5780
-func Test(addrStr string, socksPort int, dnsPort int) (*stun.NATBehavior, error) {
+func Test(addrStr string, useSOCKS5 bool, socksPort int, dnsPort int) (*stun.NATBehavior, error) {
 	if addrStr == "" {
 		addrStr = "stun.syncthing.net:3478"
 	}
@@ -53,7 +46,7 @@ func Test(addrStr string, socksPort int, dnsPort int) (*stun.NATBehavior, error)
 	if err != nil {
 		return nil, err
 	}
-	packetConn, useSOCKS5, err := setupPacketConn(socksPort)
+	packetConn, err := setupPacketConn(useSOCKS5, socksPort)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +63,7 @@ func Test(addrStr string, socksPort int, dnsPort int) (*stun.NATBehavior, error)
 }
 
 // RFC 3489
-func TestLegacy(addrStr string, socksPort int, dnsPort int) (*stun.NATType, *stun.Host, error) {
+func TestLegacy(addrStr string, useSOCKS5 bool, socksPort int, dnsPort int) (*stun.NATType, *stun.Host, error) {
 	if addrStr == "" {
 		addrStr = "stun.syncthing.net:3478"
 	}
@@ -78,7 +71,7 @@ func TestLegacy(addrStr string, socksPort int, dnsPort int) (*stun.NATType, *stu
 	if err != nil {
 		return nil, nil, err
 	}
-	packetConn, useSOCKS5, err := setupPacketConn(socksPort)
+	packetConn, err := setupPacketConn(useSOCKS5, socksPort)
 	if err != nil {
 		return nil, nil, err
 	}
