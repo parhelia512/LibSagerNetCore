@@ -88,4 +88,4 @@ replace github.com/apernet/hysteria/core/v2 v2.5.1 => github.com/JimmyHuang454/h
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.17.2-0.20240830082625-e3a80594c54d
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.17.2-0.20240903071643-720dfba67873
