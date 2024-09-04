@@ -136,13 +136,6 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 		t.protectCloser = ServerProtect(config.ProtectPath, config.Protector)
 	}
 
-	if config.FakeDNS {
-		_, _ = dns.LookupIPWithOption(config.V2Ray.dnsClient, "placeholder", dns.IPOption{
-			IPv4Enable: true,
-			IPv6Enable: true,
-			FakeEnable: true,
-		})
-	}
 	lookupFunc := func(network, host string) ([]net.IP, error) {
 		response, err := config.LocalResolver.LookupIP(network, host)
 		if err != nil {
