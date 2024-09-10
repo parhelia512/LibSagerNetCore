@@ -9,10 +9,10 @@ import (
 	"github.com/wzshiming/socks5"
 )
 
-func setupPacketConn(useSOCKS5 bool, socksPort int) (net.PacketConn, error) {
+func setupPacketConn(useSOCKS5 bool, addrStr string, socksPort int) (net.PacketConn, error) {
 	if useSOCKS5 {
 		dialer, _ := socks5.NewDialer("socks5h://127.0.0.1:" + strconv.Itoa(socksPort))
-		conn, err := dialer.Dial("udp", "0.0.0.0:0")
+		conn, err := dialer.Dial("udp", addrStr)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +46,7 @@ func Test(addrStr string, useSOCKS5 bool, socksPort int, dnsPort int) (*stun.NAT
 	if err != nil {
 		return nil, err
 	}
-	packetConn, err := setupPacketConn(useSOCKS5, socksPort)
+	packetConn, err := setupPacketConn(useSOCKS5, addrStr, socksPort)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func TestLegacy(addrStr string, useSOCKS5 bool, socksPort int, dnsPort int) (*st
 	if err != nil {
 		return nil, nil, err
 	}
-	packetConn, err := setupPacketConn(useSOCKS5, socksPort)
+	packetConn, err := setupPacketConn(useSOCKS5, addrStr, socksPort)
 	if err != nil {
 		return nil, nil, err
 	}
