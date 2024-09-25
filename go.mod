@@ -89,3 +89,5 @@ replace github.com/apernet/hysteria/core/v2 v2.5.1 => github.com/JimmyHuang454/h
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
 replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.19.1-0.20240925174148-ec481c5fee4b
+
+replace google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // fix ambiguous import error
