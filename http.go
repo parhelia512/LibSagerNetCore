@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/wzshiming/socks5"
@@ -191,28 +192,30 @@ func (r *httpRequest) Execute() (HTTPResponse, error) {
 	if response.StatusCode != http.StatusOK {
 		return nil, errors.New(httpResp.errorString())
 	}
-	defer httpResp.Body.Close()
-	content, err := io.ReadAll(response.Body)
-	httpResp.content = content
-	httpResp.contentError = err
-	return httpResp, err
+	return httpResp, nil
 }
 
 type httpResponse struct {
 	*http.Response
 
-	content      []byte
-	contentError error
+	getContentOnce sync.Once
+	content        []byte
+	contentError   error
 }
 
 func (h *httpResponse) errorString() string {
+	content := h.GetContentString()
 	if h.contentError != nil {
 		return fmt.Sprint("HTTP ", h.Status)
 	}
-	return fmt.Sprint("HTTP ", h.Status, ": ", h.content)
+	return fmt.Sprint("HTTP ", h.Status, ": ", content)
 }
 
 func (h *httpResponse) GetContent() []byte {
+	h.getContentOnce.Do(func() {
+		defer h.Body.Close()
+		h.content, h.contentError = io.ReadAll(h.Body)
+	})
 	if h.contentError != nil {
 		return nil
 	}
@@ -220,10 +223,11 @@ func (h *httpResponse) GetContent() []byte {
 }
 
 func (h *httpResponse) GetContentString() string {
+	content := h.GetContent()
 	if h.contentError != nil {
 		return ""
 	}
-	return string(h.content)
+	return string(content)
 }
 
 func (r *httpResponse) GetHeader(key string) string {
