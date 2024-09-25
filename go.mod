@@ -13,7 +13,7 @@ require (
 	golang.org/x/mobile v0.0.0-20240909163608-642950227fb3
 	golang.org/x/net v0.29.0
 	golang.org/x/sys v0.25.0
-	gvisor.dev/gvisor v0.0.0-20240826202453-4b05bd999c37
+	gvisor.dev/gvisor v0.0.0-20240916094835-a174eb65023f
 )
 
 require (
@@ -75,8 +75,8 @@ require (
 	golang.org/x/tools v0.25.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117 // indirect
-	google.golang.org/grpc v1.66.2 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
+	google.golang.org/grpc v1.67.0 // indirect
 	google.golang.org/protobuf v1.34.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
@@ -88,4 +88,4 @@ replace github.com/apernet/hysteria/core/v2 v2.5.1 => github.com/JimmyHuang454/h
 
 //replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
 
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.19.1-0.20240917100740-8ed593090851
+replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.19.1-0.20240925174148-ec481c5fee4b
