@@ -27,6 +27,7 @@ type URL interface {
 	SetRawPath(rawPath string) error
 	QueryParameterNotBlank(key string) string
 	AddQueryParameter(key, value string)
+	DeleteQueryParameter(key string)
 	GetFragment() string
 	SetRawFragment(rawFragment string) error
 	GetString() string
@@ -179,6 +180,10 @@ func (u *netURL) QueryParameterNotBlank(key string) string {
 
 func (u *netURL) AddQueryParameter(key, value string) {
 	u.Add(key, value)
+}
+
+func (u *netURL) DeleteQueryParameter(key string) {
+	u.Del(key)
 }
 
 func (u *netURL) GetFragment() string {
