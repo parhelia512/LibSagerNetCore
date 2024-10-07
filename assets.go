@@ -9,7 +9,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/v2fly/v2ray-core/v5/common/platform/filesystem"
-	"golang.org/x/mobile/asset"
 	"libcore/comm"
 )
 
@@ -34,6 +33,12 @@ var (
 	extracted         map[string]bool
 	assetsAccess      *sync.Mutex
 )
+
+// assetFile implements asset.File in gomobile
+type assetFile interface {
+	io.ReadSeeker
+	io.Closer
+}
 
 type Func interface {
 	Invoke() error
@@ -74,7 +79,7 @@ func InitializeV2Ray(internalAssets string, externalAssets string, prefix string
 			}
 		}
 
-		file, err := asset.Open(assetsPrefix + fileName)
+		file, err := assetOpen(assetsPrefix + fileName)
 		if err == nil {
 			extracted[fileName] = true
 			return file, nil
@@ -157,7 +162,7 @@ func extractAssetName(name string, force bool) error {
 	var assetVersion string
 
 	loadAssetVersion := func() error {
-		av, err := asset.Open(assetsPrefix + version)
+		av, err := assetOpen(assetsPrefix + version)
 		if err != nil {
 			return newError("open version in assets").Base(err)
 		}
@@ -231,7 +236,7 @@ func extractAssetName(name string, force bool) error {
 func extractRootCACertsPem() error {
 	path := internalAssetsPath + mozillaIncludedPem
 	sumPath := path + ".sha256sum"
-	sumInternal, err := asset.Open(mozillaIncludedPem + ".sha256sum")
+	sumInternal, err := assetOpen(mozillaIncludedPem + ".sha256sum")
 	if err != nil {
 		return newError("open pem version in assets").Base(err)
 	}
@@ -254,7 +259,7 @@ func extractRootCACertsPem() error {
 		return newError("create pem file").Base(err)
 	}
 	defer pemFile.Close()
-	pem, err := asset.Open(mozillaIncludedPem)
+	pem, err := assetOpen(mozillaIncludedPem)
 	if err != nil {
 		return newError("open pem in assets").Base(err)
 	}
@@ -267,7 +272,7 @@ func extractRootCACertsPem() error {
 }
 
 func extractAsset(assetPath string, path string) error {
-	i, err := asset.Open(assetPath)
+	i, err := assetOpen(assetPath)
 	if err != nil {
 		return err
 	}
