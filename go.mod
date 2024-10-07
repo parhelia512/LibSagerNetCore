@@ -10,7 +10,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/v2fly/v2ray-core/v5 v5.0.0 // replaced
 	github.com/wzshiming/socks5 v0.5.1
-	golang.org/x/mobile v0.0.0-20240909163608-642950227fb3
+	golang.org/x/mobile v0.0.0-20241004191011-08a83c5af9f8
 	golang.org/x/net v0.30.0
 	golang.org/x/sys v0.26.0
 	gvisor.dev/gvisor v0.0.0-20240916094835-a174eb65023f
@@ -73,7 +73,7 @@ require (
 	golang.org/x/sync v0.8.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.25.0 // indirect
+	golang.org/x/tools v0.26.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240814211410-ddb44dafa142 // indirect
