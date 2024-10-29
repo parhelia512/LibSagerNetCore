@@ -5,19 +5,19 @@ go 1.22.0
 require (
 	github.com/ccding/go-stun v0.1.5
 	github.com/golang/protobuf v1.5.4
-	github.com/quic-go/quic-go v0.47.0
+	github.com/quic-go/quic-go v0.48.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.12
-	github.com/v2fly/v2ray-core/v5 v5.0.0 // replaced
+	github.com/v2fly/v2ray-core/v5 v5.22.0
 	github.com/wzshiming/socks5 v0.5.1
-	golang.org/x/mobile v0.0.0-20241004191011-08a83c5af9f8
+	golang.org/x/mobile v0.0.0-20241016134751-7ff83004ec2c
 	golang.org/x/net v0.30.0
 	golang.org/x/sys v0.26.0
 	gvisor.dev/gvisor v0.0.0-20240916094835-a174eb65023f
 )
 
 require (
-	github.com/adrg/xdg v0.5.0 // indirect
+	github.com/adrg/xdg v0.5.2 // indirect
 	github.com/aead/cmac v0.0.0-20160719120800-7af84192f0b1 // indirect
 	github.com/andybalholm/brotli v1.0.6 // indirect
 	github.com/apernet/hysteria/core/v2 v2.5.2 // indirect
@@ -35,7 +35,6 @@ require (
 	github.com/klauspost/cpuid v1.2.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.12 // indirect
 	github.com/klauspost/reedsolomon v1.9.3 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40 // indirect
 	github.com/miekg/dns v1.1.62 // indirect
 	github.com/mustafaturan/bus v1.0.2 // indirect
@@ -65,7 +64,7 @@ require (
 	github.com/xiaokangwang/VLite v0.0.0-20231225174116-75fa4b06e9f2 // indirect
 	github.com/xtaci/smux v1.5.15 // indirect
 	github.com/xtls/reality v0.0.0-20240909153216-d468813b2352 // indirect
-	go.uber.org/mock v0.4.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/crypto v0.28.0 // indirect
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
@@ -83,12 +82,10 @@ require (
 	lukechampine.com/blake3 v1.3.0 // indirect
 )
 
-replace github.com/lunixbochs/struc => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
-
-replace github.com/apernet/hysteria/core/v2 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
-
-//replace github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
-
-replace github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.21.1-0.20241013155523-0a44a40bdf4c
-
-replace google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // fix grpc ambiguous import error
+replace (
+	github.com/apernet/hysteria/core/v2 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
+	github.com/lunixbochs/struc => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
+	//github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
+	github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.22.1-0.20241030054457-32beb2ccc7a8
+	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // fix ambiguous import error
+)
