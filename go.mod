@@ -6,7 +6,6 @@ require (
 	github.com/ccding/go-stun v0.1.5
 	github.com/golang/protobuf v1.5.4
 	github.com/quic-go/quic-go v0.47.0
-	github.com/sagernet/gomobile v0.1.4
 	github.com/sirupsen/logrus v1.9.3
 	github.com/ulikunitz/xz v0.5.12
 	github.com/v2fly/v2ray-core/v5 v5.0.0 // replaced
