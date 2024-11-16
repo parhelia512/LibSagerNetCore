@@ -7,7 +7,6 @@ import (
 
 	"github.com/v2fly/v2ray-core/v5/common/buf"
 	"github.com/v2fly/v2ray-core/v5/common/net/cnc"
-	ss_common "github.com/v2fly/v2ray-core/v5/proxy/shadowsocks/common"
 	"github.com/v2fly/v2ray-core/v5/proxy/sip003"
 	"github.com/v2fly/v2ray-core/v5/transport/internet"
 
@@ -39,7 +38,15 @@ type shadowsocksrPlugin struct {
 	p protocol.Protocol
 }
 
-func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remotePort string, _ string, pluginArgs []string, account *ss_common.MemoryAccount) error {
+func (p *shadowsocksrPlugin) Init(_, _, _, _, _ string, _ []string) error {
+	panic("Please call InitProtocolPlugin.")
+}
+
+func (p *shadowsocksrPlugin) InitStreamPlugin(_, _ string) error {
+	panic("Please call InitProtocolPlugin.")
+}
+
+func (p *shadowsocksrPlugin) InitProtocolPlugin(remoteHost string, remotePort string, pluginArgs []string, key []byte, ivSize int) error {
 	fs := flag.NewFlagSet("shadowsocksr", flag.ContinueOnError)
 	fs.StringVar(&p.obfs, "obfs", "origin", "")
 	fs.StringVar(&p.obfsParam, "obfs-param", "", "")
@@ -54,8 +61,8 @@ func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remoteP
 	obfs, obfsOverhead, err := obfs.PickObfs(p.obfs, &obfs.Base{
 		Host:   p.host,
 		Port:   p.port,
-		Key:    account.Key,
-		IVSize: int(account.Cipher.IVSize()),
+		Key:    key,
+		IVSize: ivSize,
 		Param:  p.obfsParam,
 	})
 	if err != nil {
@@ -63,7 +70,7 @@ func (p *shadowsocksrPlugin) Init(_ string, _ string, remoteHost string, remoteP
 	}
 
 	protocol, err := protocol.PickProtocol(p.protocol, &protocol.Base{
-		Key:      account.Key,
+		Key:      key,
 		Overhead: obfsOverhead,
 		Param:    p.protocolParam,
 	})
