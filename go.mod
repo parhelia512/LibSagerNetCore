@@ -87,6 +87,6 @@ replace (
 	github.com/apernet/hysteria/core/v2 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
 	github.com/lunixbochs/struc => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
 	//github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
-	github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.22.1-0.20241119164500-377ce3b54d10
+	github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.22.1-0.20241121160933-a87702cf1399
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // fix ambiguous import error
 )
