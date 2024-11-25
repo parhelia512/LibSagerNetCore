@@ -12,6 +12,10 @@ func isEscaped(jsonString string, quotePosition int) bool {
 	index := quotePosition - 1
 	backslashCount := 0
 
+	if index < 0 {
+		return false
+	}
+
 	for string(jsonString[index]) == "\\" {
 		index -= 1
 		backslashCount += 1
