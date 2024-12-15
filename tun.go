@@ -198,8 +198,16 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 
 	if !config.Protect {
 		localdns.SetLookupFunc(nil)
+		if config.LocalResolver.SupportExchange() {
+			localdns.SetRawQueryFunc(nil)
+		}
 	} else {
 		localdns.SetLookupFunc(lookupFunc)
+		if config.LocalResolver.SupportExchange() {
+			localdns.SetRawQueryFunc(func(b []byte) ([]byte, error) {
+				return config.LocalResolver.Exchange(b)
+			})
+		}
 	}
 
 	return t, nil
@@ -208,6 +216,7 @@ func NewTun2ray(config *TunConfig) (*Tun2ray, error) {
 func (t *Tun2ray) Close() {
 	internet.UseAlternativeSystemDialer(nil)
 	localdns.SetLookupFunc(nil)
+	localdns.SetRawQueryFunc(nil)
 	comm.CloseIgnore(t.dev)
 	t.connectionsLock.Lock()
 	for item := t.connections.Front(); item != nil; item = item.Next() {
@@ -394,8 +403,8 @@ func (t *Tun2ray) NewPacket(source v2rayNet.Destination, destination v2rayNet.De
 	if !isDns && t.hijackDns {
 		var parser dnsmessage.Parser
 		if _, err := parser.Start(data.Bytes()); err == nil {
-			question, err := parser.Question()
-			isDns = err == nil && question.Class == dnsmessage.ClassINET && (question.Type == dnsmessage.TypeA || question.Type == dnsmessage.TypeAAAA)
+			_, err := parser.Question()
+			isDns = err == nil
 		}
 	}
 	if isDns {
