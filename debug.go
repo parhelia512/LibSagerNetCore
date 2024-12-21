@@ -1,5 +1,3 @@
-//go:build !disable_debug
-
 package libcore
 
 import (
@@ -13,9 +11,9 @@ type DebugInstance struct {
 	server *http.Server
 }
 
-func NewDebugInstance() *DebugInstance {
+func NewDebugInstance(addr string) *DebugInstance {
 	s := &http.Server{
-		Addr: "0.0.0.0:8964",
+		Addr: addr,
 	}
 	go func() {
 		_ = s.ListenAndServe()
