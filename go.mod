@@ -11,7 +11,7 @@ require (
 	github.com/ulikunitz/xz v0.5.12
 	github.com/v2fly/v2ray-core/v5 v5.23.0
 	github.com/wzshiming/socks5 v0.5.1
-	golang.org/x/net v0.32.0
+	golang.org/x/net v0.33.0
 	golang.org/x/sys v0.28.0
 	gvisor.dev/gvisor v0.0.0-20240916094835-a174eb65023f
 )
@@ -68,6 +68,7 @@ require (
 	github.com/v2fly/ss-bloomring v0.0.0-20210312155135-28617310f63e // indirect
 	github.com/xiaokangwang/VLite v0.0.0-20231225174116-75fa4b06e9f2 // indirect
 	github.com/xtaci/smux v1.5.15 // indirect
+	github.com/xtls/quic-go v0.0.0-20241220091641-6f5777d1c087 // indirect
 	github.com/xtls/reality v0.0.0-20240909153216-d468813b2352 // indirect
 	go.uber.org/mock v0.5.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
@@ -81,8 +82,8 @@ require (
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard v0.0.0-20231211153847-12269c276173 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53 // indirect
-	google.golang.org/grpc v1.69.0 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	google.golang.org/grpc v1.69.2 // indirect
+	google.golang.org/protobuf v1.36.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
 )
@@ -90,8 +91,7 @@ require (
 replace (
 	github.com/apernet/hysteria/core/v2 => github.com/JimmyHuang454/hysteria/core/v2 v2.0.0-20240724161647-b3347cf6334d
 	github.com/lunixbochs/struc => github.com/xiaokangwang/struc v0.0.0-20231031203518-0e381172f248
-	github.com/quic-go/quic-go => github.com/xtls/quic-go v0.46.2 // https://github.com/quic-go/quic-go/pull/4749
 	//github.com/v2fly/v2ray-core/v5 => ../../../v2ray-core
-	github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.23.1-0.20241217081940-fbfcd5fe2bc1
+	github.com/v2fly/v2ray-core/v5 => github.com/dyhkwong/v2ray-core/v5 v5.23.1-0.20241221121448-9b8f0b86163c
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f => google.golang.org/genproto v0.0.0-20230526161137-0005af68ea54 // fix ambiguous import error
 )
